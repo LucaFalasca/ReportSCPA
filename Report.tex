@@ -33,7 +33,16 @@ matteo.conti97@students.uniroma2.eu
 
 \section{Introduzione}
 \subsection{Descrizione del problema}
+Il progetto verte sulla realizzazione di un nucleo di calcolo per il prodotto tra due matrici, che sia quindi in grado di calcolare
+$C \leftarrow C + AB$
+dove A è una matrice $m \times k$ e B è una matrice $k \times n$. Per le matrici di input, si devono considerare due casi principali:
+\begin{enumerate}
+    \item Matrici quadrate $m = n = k$;
+    \item Matrici rettangolari $m, n \gg k$; con $k = 32, 64, 128, 156$.
+\end{enumerate}
+
 \subsection{Obiettivi}
+
 \subsection{Metriche di valutazione}
 \subsection{Raccolta dei dati}
 \section{MPI}
@@ -42,6 +51,28 @@ matteo.conti97@students.uniroma2.eu
 \subsection{Analisi delle prestazioni}
 
 \section{CUDA}
+Tramite CUDA è possibile andare ad eseguire il codice parallelo su GPU.
+
+\subsection{1 versione}
+In questa versione del codice, si adotta un approccio procedurale nel quale si scansiona la matrice A riga per riga, dividendo ciascuna riga per il numero di processi di un blocco. Analogamente, la matrice B è suddivisa per il numero di processi. Successivamente, si avvia un ciclo in cui ogni processo elabora il proprio elemento della matrice A, moltiplicandolo per tutti i valori corrispondenti assegnati nella matrice B e sommandoli progressivamente per poi salvarli in un vettore in shared memory con indice pari all'id del processo. Ogni processo esegue questa operazione per tutti gli elementi della riga A che gli sono stati assegnati. A questo punto, una volta completate le elaborazioni da parte di tutti i processi, si sincronizzano e si sommano i risultati parziali ottenuti da ciascun processo mediante una funzione di reduce. Tale procedura viene ripetuta per tutte le colonne della matrice B. Si è scelto di utilizzare dei blocchi unidimensionali, dove ogni blocco si occupa di una riga della matrice A. Quindi c'è un numero di blocchi pari al numero di righe della matrice A (m). 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/cuda_scheme.png}
+    \caption{Schema di funzionamento della prima versione del codice CUDA.}
+    \label{fig:cuda_scheme}
+\end{figure}
+
+\subsection{2 versione}
+Dato che nella prima versione ad ogni iterazione sulle colonne si andava a scrivere il risultato di un solo elemento direttamente sulla matrice C, e tra la parte di calcolo e parte di reduce ci sono dei synchthreads, per ridurre l'impatto di questi synchthreads si è deciso di andare a fare un gruppo di colonne per volta e quindi scrivere i risultati parziali su una matrice temporanea in shared memory. In questo modo si riduce il numero di synchthreads che l'algoritmo deve fare 
+
+\subsection{3 versione}
+Nella terza versione si vuole sfruttare l'idea che ogni volta che si va il prodotto tra una la riga presa in considerazione e il gruppo di colonne si usano gli stessi elementi della riga A e quindi si possono salvare in shared memory. In questo modo si riduce il numero di accessi alla memoria globale e si aumenta la velocità di esecuzione. Tuttavia per come è stata fatta l'implementazione si scorre appunto una colonna per volta quindi in shared memory si dovrebbe salvare l'intera riga, ma non è auspicabile dato che la shared memory è molto limitata e le dimensioni delle righe sono molto grandi, quindi non scalerebbe bene.
+Per ovviare a questo problema anzichè scorrere una colonna per volta si è deciso di scorrere la riga parziale del sottoinsieme delle colonne di B per volta. In questo modo si sfrutta la stessa porzione della riga di A per svolgere il prodotto con le colonne di B.
+
+\subsection{4 versione}
+La quarta versione è quasi equivalente alla terza, ma si applica una piccola variante al calcolo dell'indice di colonna di B. In particolare, nella versione 3
+calcolo l'indice di colonna di B come $icx = i * k + j * k + ic$ dove $i$ indica la colonna in cui inizia il blocco di colonne corrente, in questo modo con $i*k$ mi posiziono all'inizio del blocco corrente, invece con j intendo l'indice della colonna corrente all'interno del blocco. In questa ulteriore versione ho semplicemente fatto un raccogliemento di $k$ in modo da ridurre il numero di moltiplicazioni portando il calcolo a $icx = (i + j) * k +ic$. Ho mantenuto queste due varianti perché nonostante sia una differenza minima crea delle differenze di performance particolari. 
 \subsection{Analisi delle prestazioni}
 \section{Suddivisione del lavoro}
 \section*{References}
