@@ -25,6 +25,8 @@ matteo.conti97@students.uniroma2.eu
 }\\
 }
 
+\thispagestyle{plain}
+\pagestyle{plain}
 
 \maketitle
 
@@ -52,20 +54,52 @@ Nel constesto dell'HPC è fondamentale sfruttare le possibilità di parallelizza
     \item Implementazione effettiva del prodotto tra matrici
 \end{enumerate} 
 \subsection{Distribuzione dei dati}
-Per la distribuzione del carico è stata adottata una strategia simile a quella adottata dalla libreria ScaLAPACK, cioè la block cyclic distribution. Questa tecnica è caratterizzata principalmente da due aspetti:
+Per la distribuzione del carico è stata adottata una strategia simile a quella adottata dalla libreria ScaLAPACK, cioè la block cyclic distribution. Questa tecnica definisce uno schema per mappare un set di blocchi su dei processi fornendo un bilanciamento del carico ragionevole, è caratterizzata principalmente da due aspetti:
 \begin{itemize}
     \item I processi vengono visti come una griglia $P_r$x$P_c$
     \item La matrice viene divisa in blocchi di dimensione $B_r$x$B_c$
 \end{itemize}
-La griglia dei processi viene fatta scorrere lungo i blocchi con stride pari alla size della griglia, assegnando ad ogni processo $P_{i,j}$ un blocco $B_{i,j}$, ovviamente lo stesso processo in generale riceverà più di un blocco della matrice originale e non per forza tutti i processi riceveranno l'esatto numero di elementi, in particolare ogni processo riceve un blocco UxV con
-%INSERIRE EQUAZIONE DOVE SI VEDE LA FORMULA PER U E V
+La griglia dei processi viene fatta scorrere lungo i blocchi con stride pari alla size della griglia, assegnando ad ogni processo $P_{i,j}$ un blocco $B_{i,j}$, ovviamente lo stesso processo in generale riceverà più di un blocco della matrice originale e non per forza tutti i processi riceveranno l'esatto numero di elementi.
 Nel nostro caso le matrici sono state distribuite nel seguente modo:
 \begin{itemize}
     \item La matrice A è stata distribuita in blocchi quadrati BxB (Fig. \ref{fig:matrix_a_distribution})
     \item La matrice B è stata distribuita in blocchi di righe BxK (Fig. \ref{fig:matrix_b_distribution}), in quanto ogni riga di dimensione B di un blocco della matrice A deve moltiplicare i primi B elementi di ogni colonna della matrice B, questo comporta che i processi nella stessa colonna della process grid debbano ricevere la stessa parte della matrice B
     \item La matrice C è stata distribuita in blocchi righe BxK (Fig. \ref{fig:matrix_c_distribution}), in quanto ogni processo deve calcolare un blocco di dimensione BxK della matrice C, questo comporta che i processi nella stessa riga della process grid debbano ricevere la stessa parte della matrice C
 \end{itemize} 
-
+Come è possibile notare la differenza tra come è stata distribuita la matrice A e come sono state distribuite le matrici B e C risiede solamente nel come viene vista la process grid e dalla taglia dei blocchi in cui vengono divise le matrici.
+%TODO PARLARE DELLE FUNZIONI MPI
+Per fare questo è necessario che ogni processo conosca la sua posizione nella process grid, la size della griglia e la size dei blocchi, in modo tale da poter calcolare la porzione di matrice che gli è stata assegnata, in particolare essa viene calcolata da ogni processo come:
+\begin{equation}
+    \#elem\_block=\#elem\_row\cdot \#elem\_col
+\end{equation}
+dove 
+\begin{equation}
+    \#elem\_row=
+    \begin{cases}
+        B_c\cdot \#block\_row-(B_c-K \mod B_c) &  \text{if}\ \\
+        \text{\quad}\text{\quad} P_{i,j} : j=extra\_block\_row-1 \ \land \\ 
+        \text{\quad} \text{\quad}K \mod B_c \neq 0\\
+        B_c\cdot block\_row & \text{otherwise}\\
+    \end{cases} 
+\end{equation}
+con 
+\begin{equation}
+    \#block\_row=
+    \begin{cases}
+        \lfloor\frac{K}{B_c}+1\rfloor &  \text{if}\ P_{i,j} : j<extra\_block\_row\\
+        \lfloor\frac{K}{B_c}\rfloor & \text{otherwise}\\
+    \end{cases} 
+\end{equation}
+e
+\begin{equation}
+    \#extra\_block\_row=
+    \begin{cases}
+        P_c &  \text{if}\ K \mod B_c \neq 0 \ \land \\
+        & \lfloor\frac{K}{B_c}\rfloor \mod B_c=0\\
+        \lfloor\frac{K}{B_c}\rfloor \mod B_c & \text{otherwise}\\
+    \end{cases} 
+\end{equation}
+In modo analogo è possibile calcolare $\#elem\_col$.
 \begin{figure}
     \centering
     \includegraphics[width=0.5\textwidth]{resources/matrixA_2d_block_cyclic_distribution.jpg}
@@ -84,8 +118,11 @@ Nel nostro caso le matrici sono state distribuite nel seguente modo:
     \caption{Matrix C distribution.}
     \label{fig:matrix_c_distribution}
 \end{figure}
+\subsection{Riduzione}
+%TODO
+\subsection{Prodotto}
+%TODO
 \subsection{Analisi delle prestazioni}
-
 \section{CUDA}
 Nel contesto dell'elaborazione parallela, l'impiego di unità di elaborazione grafica (GPU) ha rivoluzionato l'accelerazione di operazioni computazionali complesse, tra cui il calcolo matriciale. Questa sezione della relazione si concentra sull'implementazione del calcolo parallelo su GPU per la moltiplicazione di due matrici dense. La moltiplicazione di matrici dense è un'operazione fondamentale in numerose applicazioni scientifiche e di calcolo, tuttavia, il suo impatto computazionale può essere significativo, specialmente con matrici di grandi dimensioni. Pertanto, l'utilizzo delle architetture parallele delle GPU offre un'opportunità significativa per migliorare le prestazioni e ridurre i tempi di calcolo. In questa sezione verranno esaminate diverse implementazioni del prodotto tra matrici su GPU, con l'obiettivo di ottimizzare le prestazioni e ridurre i tempi di esecuzione.
 
