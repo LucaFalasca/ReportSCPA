@@ -44,7 +44,12 @@ dove A è una matrice $M$x$K$ e B è una matrice $K$x$N$. Per le matrici di inpu
 \end{enumerate}
 
 \subsection{Obiettivi}
-
+L'obbiettivo di questo progetto è quello di implementare il prodotto matriciale precedentemente descritto utilizzando tre approcci:
+\begin{enumerate}
+    \item MPI: utilizzando il paradigma SIMD per la parallelizzazione multiprocesso su CPU
+    \item CUDA: sfruttando le potenzialità delle GPU per l'accelerazione delle operazioni computazionali
+    \item MPI+CUDA: cercando di combinare i vantaggi delle due tecnologie per appianarne gli svantaggi
+\end{enumerate}
 \subsection{Metriche di valutazione}
 \subsection{Raccolta dei dati}
 \section{MPI}
@@ -52,8 +57,10 @@ Nel constesto dell'HPC è fondamentale sfruttare le possibilità di parallelizza
 \begin{enumerate}
     \item Distribuzione del carico tra i processi
     \item Implementazione effettiva del prodotto tra matrici
-\end{enumerate} 
-\subsection{Distribuzione dei dati}
+    \item Riduzione del risultato
+\end{enumerate}
+
+\subsection{Distribuzione del carico}
 Per la distribuzione del carico è stata adottata una strategia simile a quella adottata dalla libreria ScaLAPACK, cioè la block cyclic distribution. Questa tecnica definisce uno schema per mappare un set di blocchi su dei processi fornendo un bilanciamento del carico ragionevole, è caratterizzata principalmente da due aspetti:
 \begin{itemize}
     \item I processi vengono visti come una griglia $P_r$x$P_c$
@@ -67,7 +74,6 @@ Nel nostro caso le matrici sono state distribuite nel seguente modo:
     \item La matrice C è stata distribuita in blocchi righe BxK (Fig. \ref{fig:matrix_c_distribution}), in quanto ogni processo deve calcolare un blocco di dimensione BxK della matrice C, questo comporta che i processi nella stessa riga della process grid debbano ricevere la stessa parte della matrice C
 \end{itemize} 
 Come è possibile notare la differenza tra come è stata distribuita la matrice A e come sono state distribuite le matrici B e C risiede solamente nel come viene vista la process grid e dalla taglia dei blocchi in cui vengono divise le matrici.
-%TODO PARLARE DELLE FUNZIONI MPI
 Per fare questo è necessario che ogni processo conosca la sua posizione nella process grid, la size della griglia e la size dei blocchi, in modo tale da poter calcolare la porzione di matrice che gli è stata assegnata, in particolare essa viene calcolata da ogni processo come:
 \begin{equation}
     \#elem\_block=\#elem\_row\cdot \#elem\_col
@@ -118,9 +124,10 @@ In modo analogo è possibile calcolare $\#elem\_col$.
     \caption{Matrix C distribution.}
     \label{fig:matrix_c_distribution}
 \end{figure}
-\subsection{Riduzione}
+La distribuzione è stata implementata in MPI combinando il tipo \textit{darray} e la funzione \textit{MPI\_File\_open}, in particolare darray permette di definire una vista personalizzata sulla matrice di input, tale il darray verrà utilizzato nell'apertura del file in modo che ogni processo veda solo la sua porzione di matrice, quella che deve ricevere dalla block cyclic distribution. Questo approccio assume che il file contente la matrice risieda su un file system parallelo specifico per HPC, in modo da poterne sfruttare completamente le potenzialità.
+\subsection{Implementazione del prodotto}
 %TODO
-\subsection{Prodotto}
+\subsection{Riduzione del risultato}
 %TODO
 \subsection{Analisi delle prestazioni}
 \section{CUDA}
