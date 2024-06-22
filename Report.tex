@@ -7,6 +7,9 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{float}
+\usepackage{minted}
+\usepackage{hyperref}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -51,7 +54,19 @@ L'obbiettivo di questo progetto è quello di implementare il prodotto matriciale
     \item MPI+CUDA: cercando di combinare i vantaggi delle due tecnologie per appianarne gli svantaggi
 \end{enumerate}
 \subsection{Metriche di valutazione}
+Per valutare le prestazioni delle soluzioni sviluppate sono stati considerati i FLOPS definiti come:
+\begin{equation}
+    FLOPS = \frac{2MNK}{exec\_time}
+\end{equation}
 \subsection{Raccolta dei dati}
+I dati sono stati raccolti utilizzando il server di dipartimento il quale ha le seguenti specifiche:
+\begin{minted}[autogobble, fontsize=\scriptsize, frame=lines]{text}
+    Processors: 2 x Intel Xeon Silver 4210
+    Memory: 64.0 GiB of RAM
+    Video processors: Nvidia Quadro RTX 5000
+    CUDA version: 12.3
+    MPI version: 4.1
+\end{minted}
 \section{MPI}
 Nel constesto dell'HPC è fondamentale sfruttare le possibilità di parallelizzazione dei task da eseguire, in particolare in questa sezione verrà utilizzato il paradigma SIMD (Single Instruction Multiple Data) per la effettuare la moltiplicazione tra matrici utilizzando le funzionalità offerte da MPI per la parallelizzazione multiprocesso su CPU.\\ In particolare, verranno affrontati i seguenti problemi:
 \begin{enumerate}
@@ -146,39 +161,38 @@ La soluzione proposta prevede 5 cicli for annidati che si occupano di processare
     \item Il secondo ciclo si occupa scorrere gli indici delle righe dei blocchi di colonne della matrice C selezionate dal precedente ciclo (Fig. \ref{fig:column_blocked_2})
     \item Il terzo ciclo si occupa di scorrere i blocchi di elementi di A e B che contribuiscono al risultato della riga del chunl di colonne di C selezionata nei cicli precedenti (Fig. \ref{fig:column_blocked_3})
     \item Il quarto ciclo si occupa di scorrere gli elementi di A e B nei blocchi selezionati nel ciclo precedente (Fig. \ref{fig:column_blocked_4})
-    \item Il quinti ciclo è quello in cui si effettua la moltiplicazione, in particolare fissato un elemento di A esso viene moltiplicato per tutti gli elementi di una riga di B ed inserito nel risultato parziale in C (Fig. \ref{fig:column_blocked_5})
+    \item Il quinto ciclo è quello in cui si effettua la moltiplicazione, in particolare fissato un elemento di A esso viene moltiplicato per tutti gli elementi di una riga di B ed inserito nel risultato parziale in C (Fig. \ref{fig:column_blocked_5})
 \end{itemize}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.25\textwidth]{resources/column_blocked_1.png}
+    \includegraphics[width=0.2\textwidth]{resources/column_blocked_1.png}
     \caption{Primo ciclo della column blocked multiplication}
     \label{fig:column_blocked_1}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.25\textwidth]{resources/column_blocked_2.png}
+    \includegraphics[width=0.2\textwidth]{resources/column_blocked_2.png}
     \caption{Secondo ciclo della column blocked multiplication}
     \label{fig:column_blocked_2}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/column_blocked_3.png}
+    \includegraphics[width=0.35\textwidth]{resources/column_blocked_3.png}
     \caption{Terzo ciclo della column blocked multiplication}
     \label{fig:column_blocked_3}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/column_blocked_4.png}
+    \includegraphics[width=0.35\textwidth]{resources/column_blocked_4.png}
     \caption{Quarto ciclo della column blocked multiplication}
     \label{fig:column_blocked_4}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/column_blocked_5.png}
+    \includegraphics[width=0.35\textwidth]{resources/column_blocked_5.png}
     \caption{Quinto ciclo della column blocked multiplication}
     \label{fig:column_blocked_5}
 \end{figure}
-\subsection{Analisi delle prestazioni}
 \section{CUDA}
 Nel contesto dell'elaborazione parallela, l'impiego di unità di elaborazione grafica (GPU) ha rivoluzionato l'accelerazione di operazioni computazionali complesse, tra cui il calcolo matriciale. Questa sezione della relazione si concentra sull'implementazione del calcolo parallelo su GPU per la moltiplicazione di due matrici dense. La moltiplicazione di matrici dense è un'operazione fondamentale in numerose applicazioni scientifiche e di calcolo, tuttavia, il suo impatto computazionale può essere significativo, specialmente con matrici di grandi dimensioni. Pertanto, l'utilizzo delle architetture parallele delle GPU offre un'opportunità significativa per migliorare le prestazioni e ridurre i tempi di calcolo. In questa sezione verranno esaminate diverse implementazioni del prodotto tra matrici su GPU, con l'obiettivo di ottimizzare le prestazioni e ridurre i tempi di esecuzione.
 
@@ -238,39 +252,15 @@ pr_{col_{Q}, t_0} & pr_{col_{Q}, t_2} & ... & pr_{col_{Q}, t_{BD}}
 dove $Q$ è il numero di colonne scelte per iterazione e $BD$ è la dimensione del blocco di thread, che corrisponde quindi al numero di thread impiegati.\\
 Ogni thread accede quindi ad un'area contigua rispetto agli altri thread, e dato che essi sono in multiplo di 32 andranno ad eseguire accessi coalizzati alla shared memory all'interno dei warp.
 
-\subsection{Analisi delle prestazioni}
+\section{Analisi delle prestazioni}
+\subsection{MPI}
+\subsection{CUDA}
+\subsubsection{MPI+CUDA}
 \section{Suddivisione del lavoro}
-\section*{References}
-
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
-
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
-
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
-
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
-
-\begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
-\end{thebibliography}
+\section{Riferimenti}
+\begin{itemize}
+    \item \href{https://github.com/LucaFalasca/ParallelMatrixMultiplication}{Codice sorgente Github}
+\end{itemize}
 \vspace{12pt}
-
 
 \end{document}
