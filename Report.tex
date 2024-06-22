@@ -158,6 +158,30 @@ Nella terza iterazione, si mira a sfruttare l'idea che durante ciascuna iterazio
 
 \subsection{4 versione}
 Nella quarta iterazione, si è introdotta una piccola variazione nel calcolo dell'indice di colonna di B, rispetto alla terza versione. Nella versione precedente, l'indice di colonna di B viene calcolato come $icx = i * k + j * k + ic$, dove $i$ indica la colonna in cui inizia il blocco di colonne corrente e $j$ rappresenta l'indice della colonna corrente all'interno del blocco. In questo modo, $ik$ posiziona l'iteratore all'inizio del blocco corrente, mentre $jk$ permette di navigare all'interno del blocco. \\ Nella nuova versione, si è scelto di raccogliere il termine $k$, riducendo così il numero di moltiplicazioni. L'indice di colonna di B viene calcolato come $icx = (i + j) * k + ic$. Questa variazione è stata mantenuta perché, nonostante sia una differenza minima, ha dimostrato di influenzare le performance in modo particolare, generando risultati distinti.
+
+\subsection{Configurazione dei parametri}
+\subsubsection{Thread}
+Nelle varie implementazioni è stata utilizzata una griglia unidimensionale di dimensione pari al numero di righe della matrice A. Questo è dovuto al fatto che ogni blocco è responsabile di una singola riga della matrice A. 
+Per quanto riguarda il numero di thread per ogni blocco (block size), si è scelto di utilizzare un valore pari a 256, in quanto si è rivelato il più efficiente in termini di prestazioni. In generale a parte mantenere il numero di thread multiplo di 32 è difficile stabilire un valore ottimale, in quanto dipende da molti fattori, per questo motivo si è scelto di utilizzare un valore che si è rivelato efficiente in base ai test effettuati.
+\subsubsection{Shared memory}
+La shared memory nella prima versione è stata utilizzata per memorizzare i risultati parziali ottenuti da ciascun thread e la dimensione dell'array è stata impostata in base al numero di thread per blocco. Nella seconda versione si usa invece una matrice in shared memory che dipende dal numero di colonne scelte. Quindi ha senso scegliere un numero di colonne che massimizzi la shared memory disponibile. Tuttavia facendo diverse prove in fase di sviluppo è stato notato che massimizzare l'utilizzo della shared memory non porta alle migliori prestazioni e quindi è stata scelta la combinazione tra numero di processi e numero di colonne che si è rivelata più efficiente. Nel nostro caso la seguente combinazione è quella con 256 thread e 28 colonne per volta. Quindi tutti gli esperimenti successivi sono stati fatti con questa configurazione.
+\subsubsection{Bank conflict}
+Andiamo ad analizzare il problema dei bank conflict nel nostro contesto. Verrà analizzata solo la versione 4 perché tutti gli altri casi sono sottoinsiemi di questo.\\
+Nella versione 4 del codice per gpu ci sono 2 utilizzi della shared memory. Il primo per memorizzare la riga della matrice A e il secondo per memorizzare un certo numero di colonne della matrice B.\\
+Per quanto riguarda il primo caso, la quantità di shared memory utilizzata è parti al numero di thread in un blocco, il quale è multilpo di 32. Quindi per questa parte verranno usati un certo numero di banchi di memoria. Nell'utilizzo che se ne fa nell'algoritmo ogni thread accede ad una cella di un banco diverso, quindi non ci possono essere conflitti perché il pattern di accesso è lineare con stride di una word da 32 bit, dato che vengono utilizzati i float che occupano 4 byte.\\
+Per quanto riguarda il secondo caso, la shared memory viene utilizzata per mantenere i risultati parziali. Ma anche in questo caso il pattern di accesso è identico al primo caso, perché ad ogni thread è associato un vettore di risultati parziali ed ognuno accede ad un banco diverso dato che il vettore bidimensionale in shared memory segue un row-major order. il vettore ausiliario è fatto nel seguente modo:
+\[
+aux = \left[
+\begin{matrix}
+pr_{col_0, t_0} & pr_{col_0, t_2} & ... & pr_{col_0, t_{BD}} \\
+pr_{col_1, t_0} & pr_{col_1, t_2} & ... & pr_{col_1, t_{BD}} \\
+... & ... & ... & ... \\
+pr_{col_{Q}, t_0} & pr_{col_{Q}, t_2} & ... & pr_{col_{Q}, t_{BD}}
+\end{matrix}\right]
+\]
+dove $Q$ è il numero di colonne scelte per iterazione e $BD$ è la dimensione del blocco di thread, che corrisponde quindi al numero di thread impiegati.\\
+Ogni thread accede quindi ad un'area contigua rispetto agli altri thread, e dato che essi sono in multiplo di 32 andranno ad eseguire accessi coalizzati alla shared memory all'interno dei warp.
+
 \subsection{Analisi delle prestazioni}
 \section{Suddivisione del lavoro}
 \section*{References}
