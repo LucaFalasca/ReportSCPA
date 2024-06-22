@@ -44,7 +44,12 @@ dove A è una matrice $M$x$K$ e B è una matrice $K$x$N$. Per le matrici di inpu
 \end{enumerate}
 
 \subsection{Obiettivi}
-
+L'obbiettivo di questo progetto è quello di implementare il prodotto matriciale precedentemente descritto utilizzando tre approcci:
+\begin{enumerate}
+    \item MPI: utilizzando il paradigma SIMD per la parallelizzazione multiprocesso su CPU
+    \item CUDA: sfruttando le potenzialità delle GPU per l'accelerazione delle operazioni computazionali
+    \item MPI+CUDA: cercando di combinare i vantaggi delle due tecnologie per appianarne gli svantaggi
+\end{enumerate}
 \subsection{Metriche di valutazione}
 \subsection{Raccolta dei dati}
 \section{MPI}
@@ -52,8 +57,10 @@ Nel constesto dell'HPC è fondamentale sfruttare le possibilità di parallelizza
 \begin{enumerate}
     \item Distribuzione del carico tra i processi
     \item Implementazione effettiva del prodotto tra matrici
-\end{enumerate} 
-\subsection{Distribuzione dei dati}
+    \item Riduzione del risultato
+\end{enumerate}
+
+\subsection{Distribuzione del carico}
 Per la distribuzione del carico è stata adottata una strategia simile a quella adottata dalla libreria ScaLAPACK, cioè la block cyclic distribution. Questa tecnica definisce uno schema per mappare un set di blocchi su dei processi fornendo un bilanciamento del carico ragionevole, è caratterizzata principalmente da due aspetti:
 \begin{itemize}
     \item I processi vengono visti come una griglia $P_r$x$P_c$
@@ -67,14 +74,12 @@ Nel nostro caso le matrici sono state distribuite nel seguente modo:
     \item La matrice C è stata distribuita in blocchi righe BxK (Fig. \ref{fig:matrix_c_distribution}), in quanto ogni processo deve calcolare un blocco di dimensione BxK della matrice C, questo comporta che i processi nella stessa riga della process grid debbano ricevere la stessa parte della matrice C
 \end{itemize} 
 Come è possibile notare la differenza tra come è stata distribuita la matrice A e come sono state distribuite le matrici B e C risiede solamente nel come viene vista la process grid e dalla taglia dei blocchi in cui vengono divise le matrici.
-%TODO PARLARE DELLE FUNZIONI MPI
 Per fare questo è necessario che ogni processo conosca la sua posizione nella process grid, la size della griglia e la size dei blocchi, in modo tale da poter calcolare la porzione di matrice che gli è stata assegnata, in particolare essa viene calcolata da ogni processo come:
 \begin{equation}
     \#elem\_block=\#elem\_row\cdot \#elem\_col
 \end{equation}
-dove 
+dove $\#elem\_row$ è definito come:
 \begin{equation}
-    \#elem\_row=
     \begin{cases}
         B_c\cdot \#block\_row-(B_c-K \mod B_c) &  \text{if}\ \\
         \text{\quad}\text{\quad} P_{i,j} : j=extra\_block\_row-1 \ \land \\ 
@@ -82,17 +87,15 @@ dove
         B_c\cdot block\_row & \text{otherwise}\\
     \end{cases} 
 \end{equation}
-con 
+con $\#block\_row$ definito come:
 \begin{equation}
-    \#block\_row=
     \begin{cases}
         \lfloor\frac{K}{B_c}+1\rfloor &  \text{if}\ P_{i,j} : j<extra\_block\_row\\
         \lfloor\frac{K}{B_c}\rfloor & \text{otherwise}\\
     \end{cases} 
 \end{equation}
-e
+e $\#extra\_block\_row$ definito come:
 \begin{equation}
-    \#extra\_block\_row=
     \begin{cases}
         P_c &  \text{if}\ K \mod B_c \neq 0 \ \land \\
         & \lfloor\frac{K}{B_c}\rfloor \mod B_c=0\\
@@ -118,9 +121,56 @@ In modo analogo è possibile calcolare $\#elem\_col$.
     \caption{Matrix C distribution.}
     \label{fig:matrix_c_distribution}
 \end{figure}
-\subsection{Riduzione}
-%TODO
-\subsection{Prodotto}
+La distribuzione è stata implementata in MPI combinando il tipo \textit{darray} e la funzione \textit{MPI\_File\_open}, in particolare darray permette di definire una vista personalizzata sulla matrice di input, tale il darray verrà utilizzato nell'apertura del file in modo che ogni processo veda solo la sua porzione di matrice, quella che deve ricevere dalla block cyclic distribution. Questo approccio assume che il file contente la matrice risieda su un file system parallelo specifico per HPC, in modo da poterne sfruttare completamente le potenzialità.
+\subsection{Implementazione del prodotto}
+L'effettiva implementazione del prodotto tra matrici è stata fatta in due modi:
+\begin{itemize}
+    \item \textit{Naive}, una versione semplice in cui non sono presenti ottimizzazioni per l'accesso in memoria e l'utilizzo della cache
+    \item \textit{Column blocked}, una versione più complessa in cui sono presenti ottimizzazioni per l'accesso in memoria e l'utilizzo della cache
+\end{itemize}
+\subsubsection{Implementazione Naive}
+In questa implementazione vengono semplicemente annidati tre cicli for senza tener conto di aspetti come l'accesso in memoria e l'utilizzo della cache.
+\subsubsection{Implementazione Column blocked}
+In questa implementazione viene tenuto conto dell'ottimizzazione dell'utilizzo della cache e degli accessi in memoria. Quando un elemento di una matrice viene caricato in cache quello che accade è che vengono caricati anche i successivi 15 elementi della stessa riga (utilizzando float con linee di cache da 64byte) è quindi possibile organizzare i cicli for in modo da sfruttare questa caratteristica processando consecutivamente gli elementi che sono stati caricati evitando di doverli ricaricare in futuro.
+La soluzione proposta prevede 5 cicli for annidati che si occupano di processare le matrici per blocchi, contribuendo a blocchi di colonne del risultato finale, in particolare:
+\begin{itemize}
+    \item Il primo ciclo, il più esterno, si occupa di selezionare indici blocchi di colonne della matrice C (Fig. \ref{fig:column_blocked_1})
+    \item Il secondo ciclo si occupa scorrere gli indici delle righe dei blocchi di colonne della matrice C selezionate dal precedente ciclo (Fig. \ref{fig:column_blocked_2})
+    \item Il terzo ciclo si occupa di scorrere i blocchi di elementi di A e B che contribuiscono al risultato della riga del chunl di colonne di C selezionata nei cicli precedenti (Fig. \ref{fig:column_blocked_3})
+    \item Il quarto ciclo si occupa di scorrere gli elementi di A e B nei blocchi selezionati nel ciclo precedente (Fig. \ref{fig:column_blocked_4})
+    \item Il quinti ciclo è quello in cui si effettua la moltiplicazione, in particolare fissato un elemento di A esso viene moltiplicato per tutti gli elementi di una riga di B ed inserito nel risultato parziale in C (Fig. \ref{fig:column_blocked_5})
+\end{itemize}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.25\textwidth]{resources/column_blocked_1.png}
+    \caption{Primo ciclo della column blocked multiplication}
+    \label{fig:column_blocked_1}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.25\textwidth]{resources/column_blocked_2.png}
+    \caption{Secondo ciclo della column blocked multiplication}
+    \label{fig:column_blocked_2}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/column_blocked_3.png}
+    \caption{Terzo ciclo della column blocked multiplication}
+    \label{fig:column_blocked_3}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/column_blocked_4.png}
+    \caption{Quarto ciclo della column blocked multiplication}
+    \label{fig:column_blocked_4}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/column_blocked_5.png}
+    \caption{Quinto ciclo della column blocked multiplication}
+    \label{fig:column_blocked_5}
+\end{figure}
+\subsection{Riduzione del risultato}
 %TODO
 \subsection{Analisi delle prestazioni}
 \section{CUDA}
