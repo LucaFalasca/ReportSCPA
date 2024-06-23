@@ -257,6 +257,10 @@ Di seguito vengono riportati i risultati ottenuti nell'implementazione MPI al va
     \item Dimensione delle matrici
     \item Implementazione del prodotto
 \end{itemize}
+
+%SETUP MPI + CUDA
+\section{MPI+CUDA}
+Questo approccio cerca di combinare i vantaggi dati dalla soluzione MPI e dalla soluzione CUDA. L'utilizzo della soluzione CUDA ci permette di ottenere un miglioramento delle performance molto grande rispetto all utilizzo della sola CPU però ha il limite di essere vincolato alla memoria ed numero di GPU che del singolo server, con l'utilizzo della soluzione MPI si cerca di risolvere proprio questo problema sfruttanto la possibilità di poter utilizzare le GPU dell'intero cluster. Per come è fatta la soluzione MPI è possibile effettuare la block cyclic distribution su un intero cluster di server senza che ogni server debba leggere l'intero problema, questo ci permette di risolvere il problema della dimensione della memoria sei singoli server, inoltre in questo modo non si è vincolati al numero di GPU di un singolo server, ma è possibile utilizzare le GPU dell'intero cluster, ogni server andrà ad eseguire la computazione accelerata sulla sottomatrice che gli è stata assegnata e successivamente verrà effettuata la riduzione dei risultati parziali sui server che accolongono i \textit{row leader} che si occuperanno di scrivere il risultato finale su file. In questo caso è possibile notare come l'utilizzo dei row leader ci favorisca la scalabilità in fase di riduzione in quanto non si ha un unico server che deve ridurre i risultati di tutto il cluster.
 %RISULTATI MPI QUADRATE
 \subsubsection{Matrici quadrate}
 Come è possibile vedere dai grafici in Fig. \ref{fig:square_matrix_naive} e \ref{fig:square_matrix_blocked}, all'aumentare del numero di processi si hanno sempre vantaggi abbastanza consistenti che diventano più evidenti all'aumentare della dimensione del problema fino ad arrivare ad un fattore 30, inoltre si può vedere come l'implementazione column blocked del prodotto porti un miglioramento molto consistente delle prestazioni arrivando ad un fattore 2.
