@@ -375,7 +375,7 @@ Per quanto riguarda le prestazioni ottenute con la soluzione MPI+CUDA bisogna pr
     \item Proprio perché la GPU è una sola anche quando il carico viene diviso tra più processi, essi vengono eseguiti sulla stessa GPU, che viene serializzata
     \item Le prestazioni calcolate, al contrario del caso solo CUDA contengono anche il conteggio del trasferimento della memoria RAM alla memoria globale della GPU, quindi non sono confrontabili direttamente con le prestazioni ottenute con la soluzione solo CUDA.
 \end{itemize}
-
+Per questa versione è stata utilizzata solo la versione 3 del codice CUDA, in quanto è quella che ha prestazioni migliori.
 \subsubsection{Matrici quadrate}
 Come si può vedere dal grafico in Fig. \ref{fig:mpi_cuda_square}, come ci si potrebbe aspettare con un solo processo le prestazioni sono migliori proprio perchè c'è meno overhead dovuto alla comunicazione tra i processi, cosa che negli altri casi sarebbe stato dovuto essere controbilanciato dalla parallelizzazione tra varie GPU cosa che non è stato possibile testare, come citato prima. 
 Inoltre si può notare un calo notevole ad un certo punto proprio perché siccome è stata conteggiata anche il trasferimento della matrice in memoria della GPU, all'aumentare della dimensione della matrice il tempo di trasferimento aumenta di conseguenza fino a peggiorare le prestazioni. Tuttavia si può comunque notare un notevole miglioramento rispetto alle prestazioni ottenute con la soluzione solo MPI, ovviamente dovuto all'introduzione della GPU nel calcolo.
