@@ -369,6 +369,49 @@ Per quanto riguarda le matrici rettangolari, si può notare un calo considerevol
     \label{fig:rect_matrix_v3}
 \end{figure}
 \subsubsection{MPI+CUDA}
+Per quanto riguarda le prestazioni ottenute con la soluzione MPI+CUDA bisogna premettere che esse riportano vari limiti intrinsechi:
+\begin{itemize}
+    \item Nel server dove sono stati fatti gli eseperimenti è presente una sola GPU, e già questo comporta una limitazione notevole dato che il vantaggio di utilizzare la soluzione MPI+CUDA è proprio quello di poter utilizzare le GPU di più server, quindi in questo caso non si sta sfruttando appieno il potenziale della soluzione.
+    \item Proprio perché la gpu è una sola anche quando il carico viene diviso tra più processi, essi vengono eseguiti sulla stessa GPU, che viene serializzata
+    \item Le prestazioni calcolate, al contrario del caso solo CUDA contengono anche il conteggio del trasferimento della memoria RAM alla memoria globale della GPU, quindi non sono confrontabili direttamente con le prestazioni ottenute con la soluzione solo CUDA.
+\end{itemize}
+
+\subsubsection{Matrici quadrate}
+Come si può vedere dal grafico in Fig. \ref{fig:mpi_cuda_square}, come ci si potrebbe aspettare con un solo processo le prestazioni sono migliori proprio perchè c'è meno overhead dovuto alla comunicazione tra i processi, cosa che negli altri casi sarebbe stato dovuto essere controbilanciato dalla parallelizzazione tra varie GPU cosa che non è stato possibile testare, come citato prima. 
+Inoltre si può notare un calo notevole ad un certo punto proprio perché siccome è stata conteggiata anche il trasferimento della matrice in memoria della GPU, all'aumentare della dimensione della matrice il tempo di trasferimento aumenta di conseguenza fino a peggiorare le prestazioni. Tuttavia si può comunque notare un notevole miglioramento rispetto alle prestazioni ottenute con la soluzione solo MPI, ovviamente dovuto all'introduzione della GPU nel calcolo.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_square.jpg}
+    \caption{Prestazioni MPI+CUDA con matrici quadrate.}
+    \label{fig:mpi_cuda_square}
+\end{figure}
+\subsubsection{Matrici rettangolari}
+Per quanto riguarda le matrici rettangolari, come nel caso già analizzato nella parte CUDA, si può notare un calo notevole delle prestazioni proprio per gli stessi motivi citati in precedenza. Tuttavia si può notare un trend leggermente diverso nel quale al diminuire di k le prestazioni migliorano al contrario di quello che succedeva con il solo codice CUDA. Questo è probabilmente dovuto al fatto che siccome viene conteggiato anche il trasferimento di memoria nel calcolo esso sia un fattore determinante che aiuta matrici più piccole a ottenere prestazioni migliori.
+Inoltre come detto anche nel caso delle matrici quadrate, la versione con un solo processo ha delle prestazioni migliori rispetto alle altre proprio perché non ci sono veramente GPU multiple sul server di testing. Oltretuttto, al contrario del caso quadrato non c'è un punto in cui c'è un calo considerevole delle prestazioni dovuto al trasferimento di memoria, questo è probabilmente dovuto al fatto che le matrici rettangolari sono più piccole e quindi il tempo di trasferimento è minore e non si arriva al punto di annullare la controparte di calcolo.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_32.jpg}
+    \caption{Prestazioni MPI+CUDA con matrici rettangolari K=32.}
+    \label{fig:mpi_cuda_32}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_64.jpg}
+    \caption{Prestazioni MPI+CUDA con matrici rettangolari K=64.}
+    \label{fig:mpi_cuda_64}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_128.jpg}
+    \caption{Prestazioni MPI+CUDA con matrici rettangolari K=128.}
+    \label{fig:mpi_cuda_128}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_156.jpg}
+    \caption{Prestazioni MPI+CUDA con matrici rettangolari K=156.}
+    \label{fig:mpi_cuda_156}
+\end{figure}
 \section{Suddivisione del lavoro}
 \section{Riferimenti}
 \begin{itemize}
