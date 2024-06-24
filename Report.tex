@@ -34,7 +34,7 @@ matteo.conti97@students.uniroma2.eu
 \maketitle
 
 \begin{abstract}
-Il progetto descrive l'implementazione di un nucleo di calcolo per il prodotto tra due matrici utilizzando tre approcci distinti: MPI, CUDA e una combinazione di MPI e CUDA. L'approccio MPI sfrutta il paradigma SIMD per la parallelizzazione multiprocesso su CPU, utilizzando tecniche come la block cyclic distribution per la distribuzione del carico tra i processi e la riduzione dei risultati tramite comunicazione collettiva. L'approccio CUDA impiega le potenzialità delle GPU per accelerare le operazioni, con diverse versioni del codice ottimizzate per ridurre il numero di sincronizzazioni e migliorare l'uso della shared memory. La combinazione MPI+CUDA cerca di unire i vantaggi di entrambi i metodi per appianarne gli svantaggi, analizzando un scenario distribuito composto da più macchine con molteplici GPU. Le prestazioni delle soluzioni sono valutate in termini di FLOPS, e i dati sono stati raccolti utilizzando un server con processori Intel Xeon Silver 4210, 64 GiB di RAM, e una Nvidia Quadro RTX 5000.
+Il progetto prevede l'implementazione di un nucleo di calcolo per il prodotto tra matrici utilizzando tre approcci distinti: MPI, CUDA e una combinazione di MPI e CUDA. L'approccio MPI sfrutta il paradigma SIMD per la parallelizzazione multiprocesso su CPU, utilizzando tecniche come la block cyclic distribution per la distribuzione del carico tra i processi e la riduzione dei risultati tramite comunicazione collettiva. L'approccio CUDA impiega le potenzialità delle GPU per accelerare le operazioni, con diverse versioni del codice ottimizzate per ridurre il numero di sincronizzazioni e migliorare l'uso della shared memory. La combinazione MPI+CUDA cerca di unire i vantaggi di entrambi i metodi per appianarne gli svantaggi, analizzando un scenario distribuito composto da più macchine con molteplici GPU.
 \end{abstract}
 
 \section{Introduzione}
@@ -48,7 +48,7 @@ dove A è una matrice $M$x$K$ e B è una matrice $K$x$N$. Per le matrici di inpu
 \end{enumerate}
 
 \subsection{Obiettivi}
-L'obbiettivo di questo progetto è quello di implementare il prodotto matriciale precedentemente descritto utilizzando tre approcci:
+L'obbiettivo di questo progetto è quello di implementare il prodotto tra matrici precedentemente descritto utilizzando tre approcci:
 \begin{enumerate}
     \item MPI: utilizzando il paradigma SIMD per la parallelizzazione multiprocesso su CPU
     \item CUDA: sfruttando le potenzialità delle GPU per l'accelerazione delle operazioni computazionali
@@ -60,7 +60,7 @@ Per valutare le prestazioni delle soluzioni sviluppate sono stati considerati i 
     FLOPS = \frac{2MNK}{exec\_time}
 \end{equation}
 \subsection{Raccolta dei dati}
-I dati sono stati raccolti utilizzando il server di dipartimento il quale ha le seguenti specifiche:
+I dati sono stati raccolti utilizzando il server di dipartimento messo a disposizione per il corso, il quale ha le seguenti specifiche:
 \begin{minted}[autogobble, fontsize=\scriptsize, frame=lines]{text}
     Processors: 2 x Intel Xeon Silver 4210
     Memory: 64.0 GiB of RAM
@@ -199,7 +199,7 @@ Nel contesto dell'elaborazione parallela, l'impiego di unità di elaborazione gr
 
 \subsection{1 versione}
 Nella presente iterazione del codice, si adotta un approccio procedurale mediante il quale la matrice A viene esaminata riga per riga, con ciascuna riga suddivisa per il numero di processi all'interno di un blocco. Analogamente, la matrice B subisce una suddivisione in base al numero di processi. Segue un ciclo in cui ogni processo elabora il proprio elemento della matrice A, effettuando la moltiplicazione con tutti i valori corrispondenti assegnati nella matrice B e sommandoli gradualmente per poi archiviarli in un vettore in memoria condivisa, con indice corrispondente all'identificativo del processo. Ciascun processo esegue tale operazione per tutti gli elementi della riga A che gli sono stati assegnati. Una volta completate le elaborazioni da parte di tutti i processi, si sincronizzano e sommano i risultati parziali ottenuti da ciascun processo mediante l'utilizzo di una funzione di riduzione. Tale procedura viene iterata per tutte le colonne della matrice B. Si è scelto di impiegare blocchi unidimensionali, dove ogni blocco è responsabile di una singola riga della matrice A. Pertanto, il numero di blocchi corrisponde al numero di righe della matrice A (m). (Fig. \ref{fig:cuda_scheme_v1})
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/cuda_scheme_v1.png}
     \caption{Schema di funzionamento della prima versione del codice CUDA.}
@@ -210,7 +210,7 @@ Nella presente iterazione del codice, si adotta un approccio procedurale mediant
 Poiché nella prima versione del codice si scriveva il risultato di un singolo elemento direttamente sulla matrice C ad ogni iterazione sulle colonne, e considerando che tra la fase di calcolo e quella di riduzione si richiedeva una sincronizzazione tra i thread, si è deciso di mitigare l'impatto di tali sincronizzazioni mediante l'adozione di un approccio che prevede l'elaborazione di gruppi di colonne per volta. Di conseguenza, i risultati parziali sono scritti su una matrice temporanea in memoria condivisa. Questa strategia consente di ridurre il numero di sincronizzazioni tra i thread richieste dall'algoritmo. (Fig. \ref{fig:cuda_scheme_v2})
 
 
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/cuda_scheme_v2.png}
     \caption{Schema di funzionamento della seconda versione del codice CUDA.}
@@ -220,7 +220,7 @@ Poiché nella prima versione del codice si scriveva il risultato di un singolo e
 \subsection{3 versione}
 Nella terza iterazione, si mira a sfruttare l'idea che durante ciascuna iterazione del prodotto tra una riga considerata e un gruppo di colonne, gli stessi elementi della riga A sono utilizzati ripetutamente. Questo consente di memorizzarli in memoria condivisa, riducendo così il numero complessivo di accessi alla memoria globale e incrementando l'efficienza dell'esecuzione. Tuttavia, l'implementazione iniziale prevede lo scorrimento di una colonna alla volta, il che implica la necessità di memorizzare l'intera riga in memoria condivisa. Questo approccio risulta poco pratico dato che le dimensioni delle righe sono considerevoli e la capacità della memoria condivisa è limitata. \\ Per risolvere questo problema, anziché iterare una colonna per volta, si è optato per l'iterazione sulla riga parziale del sottoinsieme delle colonne di B per volta. In questo modo, viene sfruttata la medesima porzione della riga A per eseguire il prodotto con le colonne di B. Tale strategia ottimizza l'utilizzo della memoria condivisa, garantendo al contempo un migliore bilanciamento tra l'efficienza computazionale e l'utilizzo delle risorse di memoria disponibili. (Fig. \ref{fig:cuda_scheme_v3})
 
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/cuda_scheme_v3.png}
     \caption{Schema di funzionamento della terza versione del codice CUDA.}
@@ -235,7 +235,11 @@ Per quanto riguarda il numero di thread per ogni blocco (block size), si è scel
 La shared memory nella prima versione è stata utilizzata per memorizzare i risultati parziali ottenuti da ciascun thread e la dimensione dell'array è stata impostata in base al numero di thread per blocco. Nella seconda versione si usa invece una matrice in shared memory che dipende dal numero di colonne scelte. Quindi ha senso scegliere un numero di colonne che massimizzi la shared memory disponibile. Tuttavia facendo diverse prove in fase di sviluppo è stato notato che massimizzare l'utilizzo della shared memory non porta alle migliori prestazioni e quindi è stata scelta la combinazione tra numero di processi e numero di colonne che si è rivelata più efficiente. Nel nostro caso la seguente combinazione è quella con 256 thread e 28 colonne per volta. Quindi tutti gli esperimenti successivi sono stati fatti con questa configurazione.
 \subsubsection{Bank conflict}
 Andiamo ad analizzare il problema dei bank conflict nel nostro contesto. Verrà analizzata solo la versione 3 perché tutti gli altri casi sono sottoinsiemi di questo.\\
-Nella versione 3 del codice per GPU ci sono 2 utilizzi della shared memory. Il primo per memorizzare la riga della matrice A e il secondo per memorizzare un certo numero di colonne della matrice B.\\
+Nella versione 3 del codice per GPU ci sono 2 possibili utilizzi della shared memory: 
+\begin{itemize}
+    \item Memorizzare la riga della matrice A 
+    \item Memorizzare un dato numero di colonne della matrice B
+\end{itemize}
 Per quanto riguarda il primo caso, la quantità di shared memory utilizzata è pari al numero di thread in un blocco, il quale è multilpo di 32. Il che significa che ogni warp di thread utilizza 32 banchi per volta e accedendo in questo modo in maniera simultanea alla memoria. Nell'utilizzo che se ne fa nell'algoritmo ogni thread accede ad una bank diverso, quindi non ci possono essere conflitti perché il pattern di accesso è lineare con stride di una word da 32 bit, dato che vengono utilizzati i float che occupano 4 byte.\\
 Per quanto riguarda il secondo caso, la shared memory viene utilizzata per mantenere i risultati parziali. Ma anche in questo caso il pattern di accesso è identico al primo caso, perché ad ogni thread è associato un vettore di risultati parziali ed ognuno accede ad un banco diverso dato che il vettore bidimensionale in shared memory segue un row-major order. il vettore ausiliario è fatto nel seguente modo:
 \[
@@ -252,7 +256,7 @@ Ogni thread accede quindi ad un'area contigua rispetto agli altri thread, e dato
 
 %MPI + CUDA
 \section{MPI+CUDA}
-Questo approccio cerca di combinare i vantaggi dati dalla soluzione MPI e dalla soluzione CUDA. L'utilizzo della soluzione CUDA ci permette di ottenere un miglioramento delle performance molto grande rispetto all utilizzo della sola CPU però ha il limite di essere vincolato alla memoria ed numero di GPU che del singolo server, con l'utilizzo della soluzione MPI si cerca di risolvere proprio questo problema sfruttanto la possibilità di poter utilizzare le GPU dell'intero cluster. Per come è fatta la soluzione MPI è possibile effettuare la block cyclic distribution su un intero cluster di server senza che ogni server debba leggere l'intero problema, questo ci permette di risolvere il problema della dimensione della memoria sei singoli server, inoltre in questo modo non si è vincolati al numero di GPU di un singolo server, ma è possibile utilizzare le GPU dell'intero cluster, ogni server andrà ad eseguire la computazione accelerata sulla sottomatrice che gli è stata assegnata e successivamente verrà effettuata la riduzione dei risultati parziali sui server che accolongono i \textit{row leader} che si occuperanno di scrivere il risultato finale su file. In questo caso è possibile notare come l'utilizzo dei row leader ci favorisca la scalabilità in fase di riduzione in quanto non si ha un unico server che deve ridurre i risultati di tutto il cluster.
+Questo approccio cerca di combinare i vantaggi dati dalla soluzione MPI e dalla soluzione CUDA. L'utilizzo della soluzione CUDA ci permette di ottenere un miglioramento delle performance molto grande rispetto all utilizzo della sola CPU però ha il limite di essere vincolato alla memoria ed al numero di GPU del singolo server, con l'utilizzo della soluzione MPI si cerca di risolvere proprio questo problema sfruttanto la possibilità di poter utilizzare le GPU dell'intero cluster e sfruttare l'astrazione di memoria distribuita. Per come è fatta la soluzione MPI è possibile effettuare la block cyclic distribution su un intero cluster di server senza che ogni server debba leggere l'intero problema, questo ci permette di risolvere il problema della dimensione della memoria dei singoli server che ora leggeranno solo la loro sottomatrice. Inoltre in questo modo non si è vincolati al numero di GPU di un singolo server, ma è possibile utilizzare le GPU dell'intero cluster, ogni server andrà ad eseguire la computazione accelerata sulla sottomatrice che gli è stata assegnata tramite block cyclic distribution e successivamente verrà effettuata la riduzione dei risultati parziali sui server che accolongono i \textit{row leader} che si occuperanno di scrivere il risultato finale su file. In questo caso è possibile notare come l'utilizzo dei row leader favorisca la scalabilità in fase di riduzione in quanto non si ha un unico server che deve ridurre i risultati di tutto il cluster.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.4\textwidth]{resources/mpi_cuda_adjusted.png}
@@ -406,9 +410,9 @@ Come è possibile vedere dai grafici anche in questo caso, seppur in maniera men
 \subsection{CUDA}
 Analizziamo ora le prestazioni ottenute dalle diverse versioni del codice CUDA.\\
 \subsubsection{Matrici quadrate}
-Mettendo a confronto le prestazioni delle 3 versioni del codice tra loro (Fig. \ref{fig:square_matrix}) si può notare che innanzitutto che la versione 3 è quella che ha prestazioni migliori, questo è dovuto al fatto che essa sfrutta al meglio la shared memory e riduce il numero di accessi alla memoria globale, come spiegato in precedenza. 
-Invece la versione 2 ha delle performance peggiori rispetto alla versione 1, nonostante sarebbe dovuto essere un miglioramento. 
-Questo strano comportamento potrebbe essere dovuto al fatto che la versione 2 ha un overhead maggiore di memoria rispetto alla versione 1 in quanto deve mantenere una matrice ausiliaria dei risultati parziali più grande e questo potrebbe avere un impatto maggiore rispetto al numero di sincronizzazioni in più della versione 1. Inoltre un altra motivazione potrebbe essere che siccome nella versione 2 del codice c'è una complessità aggiuntiva dovuta alla necessità di gestire un numero di colonne diverso da 1, l'aggiunta di codice per gestire questa complessità potrebbe aver portato a ridurre i benefici introdotti e quindi ad ottenere delle prestazioni minori.\\
+Mettendo a confronto le prestazioni delle 3 versioni del codice tra loro (Fig. \ref{fig:square_matrix}) si può notare immediatamente che la versione 3 è quella che ha prestazioni migliori, questo è dovuto al fatto che essa sfrutta al meglio la shared memory e riduce il numero di accessi alla memoria globale, come spiegato in precedenza. 
+Invece la versione 2 ha delle performance peggiori rispetto alla versione 1, nonostante ci si aspettasse un miglioramento. 
+Questo strano comportamento potrebbe essere dovuto al fatto che la versione 2 ha un overhead maggiore di memoria rispetto alla versione 1 in quanto deve mantenere una matrice ausiliaria dei risultati parziali più grande e questo potrebbe avere un impatto maggiore rispetto al numero di sincronizzazioni in più della versione 1. Inoltre un'altra motivazione potrebbe essere che dato che nella versione 2 del codice c'è una complessità aggiuntiva dovuta alla necessità di gestire un numero di colonne diverso da 1, l'aggiunta di codice per gestire questa complessità potrebbe aver portato a ridurre i benefici introdotti e quindi ad ottenere delle prestazioni minori.\\
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{resources/gpu_matrix_square.png}
@@ -416,7 +420,7 @@ Questo strano comportamento potrebbe essere dovuto al fatto che la versione 2 ha
     \label{fig:square_matrix}
 \end{figure}
 \subsubsection{Matrici rettangolari}
-Per quanto riguarda le matrici rettangolari, si può notare un calo considerevole delle prestazioni. Questo comportamento è probabilmente dovuto al fatto che nelle implementazioni ogni blocco lavora su una singola riga della colonna A alla volta, dividendola per il numero di thread in quel blocco. Dato che ogni riga della matrice A è grande k, e negli esperimenti k varia da 32 a 156, questi sono tutti valori più piccoli della dimensione dei blocchi che è settata a 256. Quindi ci saranno molti thread per ogni blocco che non fanno nulla, portandosi però l'overhead di averli creati. Infatti come si può notare le prestazioni peggiorano sempre più al diminuire del valore di k proprio perché il numero di thread inutili aumenta. E questo succede in tutte le versioni del codice proprio perchè utilizzano tutte lo stesso meccanismo di calcolo.\\
+Per quanto riguarda le matrici rettangolari, si può notare un calo considerevole delle prestazioni. Questo comportamento è probabilmente dovuto al fatto che nelle implementazioni ogni blocco lavora su una singola riga della colonna A alla volta, dividendola per il numero di thread in quel blocco. Dato che ogni riga della matrice A è grande k, e negli esperimenti k varia da 32 a 156, questi sono tutti valori più piccoli della dimensione dei blocchi che è settata a 256. Quindi ci saranno molti thread per ogni blocco che non fanno nulla, portandosi però dietro l'overhead di averli creati. Infatti come si può notare le prestazioni peggiorano sempre più al diminuire del valore di k proprio perché il numero di thread inutili aumenta. E questo succede in tutte le versioni del codice proprio perchè utilizzano tutte lo stesso meccanismo di calcolo.\\
 
 \begin{figure}[H]
     \centering
@@ -440,7 +444,7 @@ Per quanto riguarda le matrici rettangolari, si può notare un calo considerevol
 Per quanto riguarda le prestazioni ottenute con la soluzione MPI+CUDA bisogna premettere che esse riportano vari limiti intrinsechi:
 \begin{itemize}
     \item Nel server dove sono stati fatti gli eseperimenti è presente una sola GPU, e già questo comporta una limitazione notevole dato che il vantaggio di utilizzare la soluzione MPI+CUDA è proprio quello di poter utilizzare le GPU di più server, quindi in questo caso non si sta sfruttando appieno il potenziale della soluzione.
-    \item Proprio perché la GPU è una sola anche quando il carico viene diviso tra più processi, essi vengono eseguiti sulla stessa GPU, che viene serializzata
+    \item Dato la GPU è una sola quando i processi andranno a tentare di eseguire concorrentemente il nucleo di calcolo su CPU, essi verranno serializzati e quindi non si avrà un vero vantaggio dovuto alla parallelizzazione tra varie GPU
     \item Le prestazioni calcolate, al contrario del caso solo CUDA contengono anche il conteggio del trasferimento della memoria RAM alla memoria globale della GPU, quindi non sono confrontabili direttamente con le prestazioni ottenute con la soluzione solo CUDA.
 \end{itemize}
 Per questa versione è stata utilizzata solo la versione 3 del codice CUDA, in quanto è quella che ha prestazioni migliori.
@@ -454,33 +458,37 @@ Inoltre si può notare un calo notevole ad un certo punto proprio perché siccom
     \label{fig:mpi_cuda_square}
 \end{figure}
 \subsubsection{Matrici rettangolari}
-Per quanto riguarda le matrici rettangolari (Fig \ref{fig:mpi_cuda_32}, Fig. \ref{fig:mpi_cuda_64}, Fig. \ref{fig:mpi_cuda_128}, Fig. \ref{fig:mpi_cuda_156}), come nel caso già analizzato nella parte CUDA, si può notare un calo notevole delle prestazioni proprio per gli stessi motivi citati in precedenza. Tuttavia si può notare un trend leggermente diverso nel quale al diminuire di k le prestazioni migliorano al contrario di quello che succedeva con il solo codice CUDA. Questo è probabilmente dovuto al fatto che siccome viene conteggiato anche il trasferimento di memoria nel calcolo esso sia un fattore determinante che aiuta matrici più piccole a ottenere prestazioni migliori.
-Inoltre come detto anche nel caso delle matrici quadrate, la versione con un solo processo ha delle prestazioni migliori rispetto alle altre proprio perché non ci sono veramente GPU multiple sul server di testing. Oltretuttto, al contrario del caso quadrato non c'è un punto in cui c'è un calo considerevole delle prestazioni dovuto al trasferimento di memoria, questo è probabilmente dovuto al fatto che le matrici rettangolari sono più piccole e quindi il tempo di trasferimento è minore e non si arriva al punto di annullare la controparte di calcolo.
-\begin{figure}
+Per quanto riguarda le matrici rettangolari (Fig \ref{fig:mpi_cuda_32}, Fig. \ref{fig:mpi_cuda_64}, Fig. \ref{fig:mpi_cuda_128}, Fig. \ref{fig:mpi_cuda_156}), come nel caso già analizzato nella parte CUDA, si può notare un calo notevole delle prestazioni proprio per gli stessi motivi citati in precedenza. Tuttavia si può notare un trend leggermente diverso nel quale al diminuire di k le prestazioni migliorano al contrario di quello che succedeva con il solo codice CUDA. Questo è probabilmente dovuto al fatto che poiché viene conteggiato anche il trasferimento di memoria nel calcolo esso sia un fattore determinante che aiuta matrici più piccole a ottenere prestazioni migliori.
+Inoltre come detto anche nel caso delle matrici quadrate, la versione con un solo processo ha delle prestazioni migliori rispetto alle altre proprio perché i kernel non vengono serializzati e ci sono meno \textit{device sinchronize} dovute alla copia dei dati dalla memoria centrale alla memoria della GPU. Oltretuttto, al contrario del caso quadrato non c'è un punto in cui c'è un calo considerevole delle prestazioni dovuto al trasferimento di memoria, questo è probabilmente dovuto al fatto che le matrici rettangolari sono più piccole e quindi il tempo di trasferimento è minore e non si arriva al punto di annullare la controparte di calcolo.
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_32.jpg}
+    \includegraphics[width=0.45\textwidth]{resources/mpi_cuda_32.jpg}
     \caption{Prestazioni MPI+CUDA con matrici rettangolari K=32.}
     \label{fig:mpi_cuda_32}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_64.jpg}
+    \includegraphics[width=0.45\textwidth]{resources/mpi_cuda_64.jpg}
     \caption{Prestazioni MPI+CUDA con matrici rettangolari K=64.}
     \label{fig:mpi_cuda_64}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_128.jpg}
+    \includegraphics[width=0.45\textwidth]{resources/mpi_cuda_128.jpg}
     \caption{Prestazioni MPI+CUDA con matrici rettangolari K=128.}
     \label{fig:mpi_cuda_128}
 \end{figure}
-\begin{figure}
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{resources/mpi_cuda_156.jpg}
+    \includegraphics[width=0.45\textwidth]{resources/mpi_cuda_156.jpg}
     \caption{Prestazioni MPI+CUDA con matrici rettangolari K=156.}
     \label{fig:mpi_cuda_156}
 \end{figure}
 \section{Suddivisione del lavoro}
+\begin{itemize}
+    \item Luca Falasca: Implementazione del codice CUDA supporto al design della soluzione MPI e all'implementazione del codice MPI+CUDA
+    \item Matteo Conti: Implementazione del codice MPI, supporto al design della soluzione CUD e all'implementazione del codice MPI+CUDA
+\end{itemize}
 \section{Riferimenti}
 Codice sorgente
 \begin{itemize}
