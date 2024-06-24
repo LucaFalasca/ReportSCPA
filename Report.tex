@@ -9,7 +9,7 @@
 \usepackage{xcolor}
 \usepackage{float}
 \usepackage{minted}
-\usepackage{hyperref}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
@@ -34,6 +34,7 @@ matteo.conti97@students.uniroma2.eu
 \maketitle
 
 \begin{abstract}
+Il progetto descrive l'implementazione di un nucleo di calcolo per il prodotto tra due matrici utilizzando tre approcci distinti: MPI, CUDA e una combinazione di MPI e CUDA. L'approccio MPI sfrutta il paradigma SIMD per la parallelizzazione multiprocesso su CPU, utilizzando tecniche come la block cyclic distribution per la distribuzione del carico tra i processi e la riduzione dei risultati tramite comunicazione collettiva. L'approccio CUDA impiega le potenzialità delle GPU per accelerare le operazioni, con diverse versioni del codice ottimizzate per ridurre il numero di sincronizzazioni e migliorare l'uso della shared memory. La combinazione MPI+CUDA cerca di unire i vantaggi di entrambi i metodi per appianarne gli svantaggi, analizzando un scenario distribuito composto da più macchine con molteplici GPU. Le prestazioni delle soluzioni sono valutate in termini di FLOPS, e i dati sono stati raccolti utilizzando un server con processori Intel Xeon Silver 4210, 64 GiB di RAM, e una Nvidia Quadro RTX 5000.
 \end{abstract}
 
 \section{Introduzione}
@@ -414,8 +415,9 @@ Inoltre come detto anche nel caso delle matrici quadrate, la versione con un sol
 \end{figure}
 \section{Suddivisione del lavoro}
 \section{Riferimenti}
+Codice sorgente
 \begin{itemize}
-    \item \href{https://github.com/LucaFalasca/ParallelMatrixMultiplication}{Codice sorgente Github}
+    \item \href{https://github.com/LucaFalasca/ParallelMatrixMultiplication}{https://github.com/LucaFalasca/ParallelMatrixMultiplication}
 \end{itemize}
 \vspace{12pt}
 
