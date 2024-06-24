@@ -89,6 +89,24 @@ Nel nostro caso le matrici sono state distribuite nel seguente modo:
     \item La matrice B è stata distribuita in blocchi di righe BxK (Fig. \ref{fig:matrix_b_distribution}), in quanto ogni riga di dimensione B di un blocco della matrice A deve moltiplicare i primi B elementi di ogni colonna della matrice B, questo comporta che i processi nella stessa colonna della process grid debbano ricevere la stessa parte della matrice B
     \item La matrice C è stata distribuita in blocchi righe BxK (Fig. \ref{fig:matrix_c_distribution}), in quanto ogni processo deve calcolare un blocco di dimensione BxK della matrice C, questo comporta che i processi nella stessa riga della process grid debbano ricevere la stessa parte della matrice C
 \end{itemize} 
+\begin{figure}[H]
+    \raggedright
+    \includegraphics[width=0.45\textwidth]{resources/matrixA_2d_block_cyclic_distribution.jpg}
+    \caption{Matrix A distribution.}
+    \label{fig:matrix_a_distribution}
+\end{figure}
+\begin{figure}[H]
+    \raggedright
+    \includegraphics[width=0.45\textwidth]{resources/matrixB_row_block_cyclic_distribution.jpg}
+    \caption{Matrix B distribution.}
+    \label{fig:matrix_b_distribution}
+\end{figure}
+\begin{figure}[H]
+    \raggedright
+    \includegraphics[width=0.45\textwidth]{resources/matrixC_row_block_cyclic_distribution.jpg}
+    \caption{Matrix C distribution.}
+    \label{fig:matrix_c_distribution}
+\end{figure}
 Come è possibile notare la differenza tra come è stata distribuita la matrice A e come sono state distribuite le matrici B e C risiede solamente nel come viene vista la process grid e dalla taglia dei blocchi in cui vengono divise le matrici.
 Per fare questo è necessario che ogni processo conosca la sua posizione nella process grid, la size della griglia e la size dei blocchi, in modo tale da poter calcolare la porzione di matrice che gli è stata assegnata, in particolare essa viene calcolata da ogni processo come:
 \begin{equation}
@@ -98,7 +116,7 @@ dove $\#elem\_row$ è definito come:
 \begin{equation}
     \begin{cases}
         B_c\cdot \#block\_row-(B_c-K \mod B_c) &  \text{if}\ \\
-        \text{\quad}\text{\quad} P_{i,j} : j=extra\_block\_row-1 \ \land \\ 
+        \text{if}\text{\quad}\text{\quad} P_{i,j} : j=extra\_block\_row-1 \ \land \\ 
         \text{\quad} \text{\quad}K \mod B_c \neq 0\\
         B_c\cdot block\_row & \text{otherwise}\\
     \end{cases} 
@@ -106,37 +124,19 @@ dove $\#elem\_row$ è definito come:
 con $\#block\_row$ definito come:
 \begin{equation}
     \begin{cases}
-        \lfloor\frac{K}{B_c}+1\rfloor &  \text{if}\ P_{i,j} : j<extra\_block\_row\\
-        \lfloor\frac{K}{B_c}\rfloor & \text{otherwise}\\
+        \lfloor\frac{K}{B_c}+1\rfloor &  \text{if}\ P_{i,j} : j<extra\_block\_row \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\  \\
+        \lfloor\frac{K}{B_c}\rfloor & \text{otherwise} \\
     \end{cases} 
 \end{equation}
 e $\#extra\_block\_row$ definito come:
 \begin{equation}
     \begin{cases}
         P_c &  \text{if}\ K \mod B_c \neq 0 \ \land \\
-        & \lfloor\frac{K}{B_c}\rfloor \mod B_c=0\\
+        & \lfloor\frac{K}{B_c}\rfloor \mod B_c=0  \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\ \text{\char200{}}\\\
         \lfloor\frac{K}{B_c}\rfloor \mod B_c & \text{otherwise}\\
     \end{cases} 
 \end{equation}
 In modo analogo è possibile calcolare $\#elem\_col$.
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{resources/matrixA_2d_block_cyclic_distribution.jpg}
-    \caption{Matrix A distribution.}
-    \label{fig:matrix_a_distribution}
-\end{figure}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{resources/matrixB_row_block_cyclic_distribution.jpg}
-    \caption{Matrix B distribution.}
-    \label{fig:matrix_b_distribution}
-\end{figure}
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{resources/matrixC_row_block_cyclic_distribution.jpg}
-    \caption{Matrix C distribution.}
-    \label{fig:matrix_c_distribution}
-\end{figure}
 La distribuzione è stata implementata in MPI combinando il tipo \textit{darray} e la funzione \textit{MPI\_File\_open}, in particolare darray permette di definire una vista personalizzata sulla matrice di input, tale il darray verrà utilizzato nell'apertura del file in modo che ogni processo veda solo la sua porzione di matrice, quella che deve ricevere dalla block cyclic distribution. Questo approccio assume che il file contente la matrice risieda su un file system parallelo specifico per HPC, in modo da poterne sfruttare completamente le potenzialità.
 \subsection{Riduzione del risultato}
 Dopo che ogni processo ha terminato di effettuare la moltiplicazioni tra le sue sottomatrici delle matrici originali, tutti i processi che si trovano sulla stessa riga della process hanno i risultati parziali della stessa parte della matrice C, quindi per ogni riga è necessario effettuare una riduzione che vada a sommare i risultati parziali e ottenere la parte di matrice C finale che appartiene a quella riga, successivamente tale risultato viene scritto su file. E' importante notare che ogni riga di process grid va a lavorare su una parte diversa della matrice C, quindi i processi in una riga della process grid non andranno a scrivere nella stessa zona in cui scrivono i processi di altre righe, tuttavia questo non è vero per i processi all'interno della stessa riga. Per questo motivo si è scelto di introdurre il concetto di \textit{row leader} il quale corrisponde al primo processo di ogni riga della process grid, tale processo in fase di distribuzione del carico sarà l'unico a leggere C ed in fase di riduzione sarà l'unico a scrivere su C, inoltre esso eseguira il prodotto come C=C+A*B mentre gli altri processi nella riga faranno solamente C=A*B. Per la riduzione tramite comunicazione collettiva ogni processo della riga comunichera il suo risultato parziale al row leader il quale effettuerà la somma con il suo risultato parziale, ricevuti tutti i risultati parziali si avrà il risultato completo di una zona di C, la quale verrà scritta su file dal row leader. Questo approccio permette di evitare che i processi nella stessa riga debbano accedere simultaneamente alla stessa zona di file, evitando così problemi di concorrenza e velocizzando la scrittura su file. La riduzione è stata implementata utilizzando la funzione \textit{MPI\_Reduce} con l'operazione di somma utilizzando un comunicatore che definisce la riga della process grid, in cui il root è il row leader.
@@ -195,7 +195,7 @@ La soluzione proposta prevede 5 cicli for annidati che si occupano di processare
     \label{fig:column_blocked_5}
 \end{figure}
 \section{CUDA}
-Nel contesto dell'elaborazione parallela, l'impiego di unità di elaborazione grafica (GPU) ha rivoluzionato l'accelerazione di operazioni computazionali complesse, tra cui il calcolo matriciale. Questa sezione della relazione si concentra sull'implementazione del calcolo parallelo su GPU per la moltiplicazione di due matrici dense. La moltiplicazione di matrici dense è un'operazione fondamentale in numerose applicazioni scientifiche e di calcolo, tuttavia, il suo impatto computazionale può essere significativo, specialmente con matrici di grandi dimensioni. Pertanto, l'utilizzo delle architetture parallele delle GPU offre un'opportunità significativa per migliorare le prestazioni e ridurre i tempi di calcolo. In questa sezione verranno esaminate diverse implementazioni del prodotto tra matrici su GPU, con l'obiettivo di ottimizzare le prestazioni e ridurre i tempi di esecuzione. All'interno di tutte le versioni del codice la matrice B è stata memorizzata in maniera trasposta perché in questo modo si ottiene un accesso in memoria dato che la memorizzazione avviene per righe ed è possibile così sfruttare gli accessi coalizzati alla memoria per i thread nello stesso warp.
+Nel contesto dell'elaborazione parallela, l'impiego di unità di elaborazione grafica (GPU) ha rivoluzionato l'accelerazione di operazioni computazionali complesse, tra cui il calcolo matriciale. Questa sezione della relazione si concentra sull'implementazione del calcolo parallelo su GPU per la moltiplicazione di due matrici dense. La moltiplicazione di matrici dense è un'operazione fondamentale in numerose applicazioni scientifiche e di calcolo, tuttavia, il suo impatto computazionale può essere significativo, specialmente con matrici di grandi dimensioni. Pertanto, l'utilizzo delle architetture parallele delle GPU offre un'opportunità significativa per migliorare le prestazioni e ridurre i tempi di calcolo. In questa sezione verranno esaminate diverse implementazioni del prodotto tra matrici su GPU, con l'obiettivo di ottimizzare le prestazioni e ridurre i tempi di esecuzione. All'interno di tutte le versioni del codice la matrice B è stata memorizzata in maniera trasposta perché in questo modo si ottiene un accesso in memoria ottimale, dato che la memorizzazione avviene per righe ed è possibile così sfruttare gli accessi coalizzati alla memoria per i thread nello stesso warp.
 
 \subsection{1 versione}
 Nella presente iterazione del codice, si adotta un approccio procedurale mediante il quale la matrice A viene esaminata riga per riga, con ciascuna riga suddivisa per il numero di processi all'interno di un blocco. Analogamente, la matrice B subisce una suddivisione in base al numero di processi. Segue un ciclo in cui ogni processo elabora il proprio elemento della matrice A, effettuando la moltiplicazione con tutti i valori corrispondenti assegnati nella matrice B e sommandoli gradualmente per poi archiviarli in un vettore in memoria condivisa, con indice corrispondente all'identificativo del processo. Ciascun processo esegue tale operazione per tutti gli elementi della riga A che gli sono stati assegnati. Una volta completate le elaborazioni da parte di tutti i processi, si sincronizzano e sommano i risultati parziali ottenuti da ciascun processo mediante l'utilizzo di una funzione di riduzione. Tale procedura viene iterata per tutte le colonne della matrice B. Si è scelto di impiegare blocchi unidimensionali, dove ogni blocco è responsabile di una singola riga della matrice A. Pertanto, il numero di blocchi corrisponde al numero di righe della matrice A (m). (Fig. \ref{fig:cuda_scheme_v1})
@@ -236,7 +236,7 @@ La shared memory nella prima versione è stata utilizzata per memorizzare i risu
 \subsubsection{Bank conflict}
 Andiamo ad analizzare il problema dei bank conflict nel nostro contesto. Verrà analizzata solo la versione 3 perché tutti gli altri casi sono sottoinsiemi di questo.\\
 Nella versione 3 del codice per GPU ci sono 2 utilizzi della shared memory. Il primo per memorizzare la riga della matrice A e il secondo per memorizzare un certo numero di colonne della matrice B.\\
-Per quanto riguarda il primo caso, la quantità di shared memory utilizzata è parti al numero di thread in un blocco, il quale è multilpo di 32. Quindi per questa parte verranno usati un certo numero di banchi di memoria. Nell'utilizzo che se ne fa nell'algoritmo ogni thread accede ad una cella di un banco diverso, quindi non ci possono essere conflitti perché il pattern di accesso è lineare con stride di una word da 32 bit, dato che vengono utilizzati i float che occupano 4 byte.\\
+Per quanto riguarda il primo caso, la quantità di shared memory utilizzata è pari al numero di thread in un blocco, il quale è multilpo di 32. Il che significa che ogni warp di thread utilizza 32 banchi per volta e accedendo in questo modo in maniera simultanea alla memoria. Nell'utilizzo che se ne fa nell'algoritmo ogni thread accede ad una bank diverso, quindi non ci possono essere conflitti perché il pattern di accesso è lineare con stride di una word da 32 bit, dato che vengono utilizzati i float che occupano 4 byte.\\
 Per quanto riguarda il secondo caso, la shared memory viene utilizzata per mantenere i risultati parziali. Ma anche in questo caso il pattern di accesso è identico al primo caso, perché ad ogni thread è associato un vettore di risultati parziali ed ognuno accede ad un banco diverso dato che il vettore bidimensionale in shared memory segue un row-major order. il vettore ausiliario è fatto nel seguente modo:
 \[
 aux = \left[
