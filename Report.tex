@@ -281,6 +281,8 @@ Come è possibile vedere dai grafici in Fig. \ref{fig:square_matrix_naive} e \re
     critical\_stride = cache\_line\_size \cdot associativity
 \end{equation}
 Nel nostro caso le linee di cache hanno taglia 64B mentre l'associatività e 8-way pertanto il critical stride risulta essere 512B, il che è plausibile in quanto il degrado delle performance è osservabile dalle matrici $512x512$ in poi, in particolare per 1024, 2048, 4096, 8192 dove ad esempio nel caso di matrici $4096x4096$ con blocchi $32x32$ e 4 processi organizzati in una griglia $2x2$ si ha che ogni processo riceve dalla block cyclic distribuzion una matrice $2048x2048$ le cui dimensioni sono ancora multiplo del critical stride, questo rimane vero anche con più processi ad esempio 16 processi in griglia $4x4$ si avrebbe che ogni processo riceve una matrice $1024x1024$.
+Per questioni di tempo non sono state implementate le soluzioni proposte in \cite{b1} per risolvere il problema. Un'altra possibile soluzione al problema è quella di cambiare la taglia dei blocchi utilizzati nella block cyclic distribution, in modo tale da evitare che le dimensioni delle matrici distribuite siano multiplo del critical stride, per questioni di tempo e occupazione del server non sono stati effettuati test in tal senso.
+
 In Fig. \ref{fig:square_matrix_naive_nocrit} e \ref{fig:square_matrix_blocked_nocrit} sono riportati i risultati ottenuti senza il problema del critical stride per poter visualizzare meglio l'andamento delle performance.
 \begin{figure}[H]
     \centering
