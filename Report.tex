@@ -255,7 +255,7 @@ Ogni thread accede quindi ad un'area contigua rispetto agli altri thread, e dato
 Questo approccio cerca di combinare i vantaggi dati dalla soluzione MPI e dalla soluzione CUDA. L'utilizzo della soluzione CUDA ci permette di ottenere un miglioramento delle performance molto grande rispetto all utilizzo della sola CPU però ha il limite di essere vincolato alla memoria ed numero di GPU che del singolo server, con l'utilizzo della soluzione MPI si cerca di risolvere proprio questo problema sfruttanto la possibilità di poter utilizzare le GPU dell'intero cluster. Per come è fatta la soluzione MPI è possibile effettuare la block cyclic distribution su un intero cluster di server senza che ogni server debba leggere l'intero problema, questo ci permette di risolvere il problema della dimensione della memoria sei singoli server, inoltre in questo modo non si è vincolati al numero di GPU di un singolo server, ma è possibile utilizzare le GPU dell'intero cluster, ogni server andrà ad eseguire la computazione accelerata sulla sottomatrice che gli è stata assegnata e successivamente verrà effettuata la riduzione dei risultati parziali sui server che accolongono i \textit{row leader} che si occuperanno di scrivere il risultato finale su file. In questo caso è possibile notare come l'utilizzo dei row leader ci favorisca la scalabilità in fase di riduzione in quanto non si ha un unico server che deve ridurre i risultati di tutto il cluster.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.4\textwidth]{resources/mpi_cuda.png}
+    \includegraphics[width=0.4\textwidth]{resources/mpi_cuda_adjusted.png}
     \caption{Schema di funzionamento della soluzione MPI+CUDA.}
     \label{fig:mpi_cuda_scheme}
 \end{figure}
@@ -271,7 +271,12 @@ Di seguito vengono riportati i risultati ottenuti nell'implementazione MPI al va
 
 %RISULTATI MPI QUADRATE
 \subsubsection{Matrici quadrate}
-Come è possibile vedere dai grafici in Fig. \ref{fig:square_matrix_naive} e \ref{fig:square_matrix_blocked}, all'aumentare del numero di processi si hanno sempre vantaggi abbastanza consistenti che diventano più evidenti all'aumentare della dimensione del problema fino ad arrivare ad un fattore 30, inoltre si può vedere come l'implementazione column blocked del prodotto porti un miglioramento molto consistente delle prestazioni arrivando ad un fattore 2.
+Come è possibile vedere dai grafici in Fig. \ref{fig:square_matrix_naive} e \ref{fig:square_matrix_blocked}, all'aumentare del numero di processi si hanno sempre vantaggi abbastanza consistenti che diventano più evidenti all'aumentare della dimensione del problema fino ad arrivare ad un fattore 30, inoltre si può vedere come l'implementazione column blocked del prodotto porti un miglioramento molto consistente delle prestazioni arrivando ad un fattore 2. Dai grafici è inoltre possibile vedere dei drastici cali di performance, essi avvengono in corrispondenza di matrici le cui dimensioni sono potenze di 2 e peggiorano con l'aumentare della taglia del problema. Questo degrado delle performance è probabilmente un fatto dovuto a problemi di cache, in particolare al problema del \textit{critical stride}\cite{b1}, nella trattazione viene spiegato come avere zone di memoria la cui taglia che è multiplo del critical stride porti a problemi di cache che si manifestano come un calo di performance molto consistente. Il critical stride puo essere calcolato come:
+\begin{equation}
+    critical\_stride = cache\_line\_size \cdot associativity
+\end{equation}
+Nel nostro caso le linee di cache hanno taglia 64B mentre l'associatività e 8-way pertanto il critical stride risulta essere 512B, il che è plausibile in quanto il degrado delle performance è osservabile dalle matrici $512x512$ in poi, in particolare per 1024, 2048, 4096, 8192 dove ad esempio nel caso di matrici $4096x4096$ con blocchi $32x32$ e 4 processi organizzati in una griglia $2x2$ si ha che ogni processo riceve dalla block cyclic distribuzion una matrice $2048x2048$ le cui dimensioni sono ancora multiplo del critical stride, questo rimane vero anche con più processi ad esempio 16 processi in griglia $4x4$ si avrebbe che ogni processo riceve una matrice $1024x1024$.
+In Fig. \ref{fig:square_matrix_naive_nocrit} e \ref{fig:square_matrix_blocked_nocrit} sono riportati i risultati ottenuti senza il problema del critical stride per poter visualizzare meglio l'andamento delle performance.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.4\textwidth]{resources/quadrate_naive.png}
@@ -284,9 +289,22 @@ Come è possibile vedere dai grafici in Fig. \ref{fig:square_matrix_naive} e \re
     \caption{Prestazioni ottenute con matrici quadrate e prodotto column blocked.}
     \label{fig:square_matrix_blocked}
 \end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/square_naive_nocrit.png}
+    \caption{Prestazioni ottenute con matrici quadrate e prodotto naive senza critical stride.}
+    \label{fig:square_matrix_naive_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/square_blocked_nocrit.png}
+    \caption{Prestazioni ottenute con matrici quadrate e prodotto column blocked senza critical stride.}
+    \label{fig:square_matrix_blocked_nocrit}
+\end{figure}
 %RISULTATI MPI RETTANGOLARI
 \subsubsection{Matrici rettangolari}
-Come è possibile vedere dai grafici in Fig. \ref{fig:rect_k32_matrix_naive}, \ref{fig:rect_k32_matrix_blocked}, \ref{fig:rect_k64_matrix_naive}, \ref{fig:rect_k64_matrix_blocked}, \ref{fig:rect_k128_matrix_naive}, \ref{fig:rect_k128_matrix_blocked}, \ref{fig:rect_k156_matrix_naive} e \ref{fig:rect_k156_matrix_blocked} anche in questo caso la parallelizzazione porta ad un vantaggio abbastanza evidente, tuttavia non sempre il numero massimo di processi disponibili porta ai risultati migliori, ad esempio nel caso di $K=64$ effettuare il calcolo con 2, 8 e 12 processi porta a prestazioni migliori rispetto al calcolo con 20 processi, per $K=128$ risulta essere migliore il calcolo effettuato con 16 processi mentre con $K=156$ risultano migliori 12 e 16 processi. Questo comportamento è probabilmente dovuto al fatto che rispetto alle matrici quadrate la taglia del problema è molto più piccola, infatti in tutti i casi l'utilizzare un minor numero di processi porta a vantaggi di solo 1 o 2 GFlops che sono trascurabili rispetto ai vantaggi ottenuti con le matrici quadrate. Inoltre si può notare come l'implementazione column blocked porti sempre a prestazioni migliori rispetto a quella naive, anche se in modo meno evidente rispetto alle matrici quadrate, questo probabilmente è sempre dovuto alla taglia del problema.
+Come è possibile vedere dai grafici in Fig. \ref{fig:rect_k32_matrix_naive}, \ref{fig:rect_k32_matrix_blocked}, \ref{fig:rect_k64_matrix_naive}, \ref{fig:rect_k64_matrix_blocked}, \ref{fig:rect_k128_matrix_naive}, \ref{fig:rect_k128_matrix_blocked}, \ref{fig:rect_k156_matrix_naive} e \ref{fig:rect_k156_matrix_blocked} anche in questo caso la parallelizzazione porta ad un vantaggio abbastanza evidente, tuttavia non sempre il numero massimo di processi disponibili porta ai risultati migliori, ad esempio nel caso di $K=32$ e $K=64$ effettuare il calcolo con 2, 8 e 12 processi porta a prestazioni migliori rispetto al calcolo con 20 processi, per $K=128$ risulta essere migliore il calcolo effettuato con 16 processi mentre con $K=156$ risultano migliori 12 e 16 processi. Questo comportamento è probabilmente dovuto al fatto che rispetto alle matrici quadrate la taglia del problema è molto più piccola, infatti in tutti i casi l'utilizzare un minor numero di processi porta a vantaggi di solo 1 o 2 GFlops che sono trascurabili rispetto ai vantaggi ottenuti con le matrici quadrate. Inoltre si può notare come l'implementazione column blocked porti sempre a prestazioni migliori rispetto a quella naive, anche se in modo meno evidente rispetto alle matrici quadrate, questo probabilmente è sempre dovuto alla taglia del problema.
+Come è possibile vedere dai grafici anche in questo caso, seppur in maniera meno evidente, è presente il problema del \textit{critical stride}, in Fig. \ref{fig:rect_k32_matrix_naive_nocrit}, \ref{fig:rect_k32_matrix_blocked_nocrit}, \ref{fig:rect_k64_matrix_naive_nocrit}, \ref{fig:rect_k64_matrix_blocked_nocrit}, \ref{fig:rect_k128_matrix_naive_nocrit}, \ref{fig:rect_k128_matrix_blocked_nocrit}, \ref{fig:rect_k156_matrix_naive_nocrit} e \ref{fig:rect_k156_matrix_blocked_nocrit} sono riportati i risultati ottenuti senza il problema del critical stride per poter visualizzare meglio l'andamento delle performance.
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.4\textwidth]{resources/rettangolari_k32_naive.png}
@@ -334,6 +352,55 @@ Come è possibile vedere dai grafici in Fig. \ref{fig:rect_k32_matrix_naive}, \r
     \includegraphics[width=0.4\textwidth]{resources/rettangolari_k156_blocked.png}
     \caption{Prestazioni ottenute con matrici rettangolari K=156 e prodotto column blocked.}
     \label{fig:rect_k156_matrix_blocked}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k32_naive_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=32 e prodotto naive. senza critical stride}
+    \label{fig:rect_k32_matrix_naive_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k32_blocked_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=32 e prodotto column blocked senza critical stride.}
+    \label{fig:rect_k32_matrix_blocked_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k64_naive_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=64 e prodotto naive senza critical stride.}
+    \label{fig:rect_k64_matrix_naive_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k64_blocked_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=64 e prodotto column blocked senza critical stride.}
+    \label{fig:rect_k64_matrix_blocked_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k128_naive_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=128 e prodotto naive senza critical stride.}
+    \label{fig:rect_k128_matrix_naive_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k128_blocked_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=128 e prodotto column blocked senza critical stride.}
+    \label{fig:rect_k128_matrix_blocked_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k156_naive_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=156 e prodotto naive senza critical stride.}
+    \label{fig:rect_k156_matrix_naive_nocrit}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{resources/rect_k156_blocked_nocrit.png}
+    \caption{Prestazioni ottenute con matrici rettangolari K=156 e prodotto column blocked senza critical stride.}
+    \label{fig:rect_k156_matrix_blocked_nocrit}
 \end{figure}
 %RISULTATI CUDA
 \subsection{CUDA}
@@ -419,6 +486,9 @@ Codice sorgente
 \begin{itemize}
     \item \href{https://github.com/LucaFalasca/ParallelMatrixMultiplication}{https://github.com/LucaFalasca/ParallelMatrixMultiplication}
 \end{itemize}
+\begin{thebibliography}{00}
+    \bibitem{b1} Agner \href{https://www.agner.org/optimize/optimizing_cpp.pdf}{"Optimizing software in C++: An optimization guide for Windows, Linux and Mac platforms"} pp. 91-92.
+\end{thebibliography}
 \vspace{12pt}
 
 \end{document}
