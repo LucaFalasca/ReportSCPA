@@ -174,17 +174,20 @@ Le matrici A, B e C vengono distribuite come segue:
     \end{adjustbox}
 \end{frame}
 
-\subsubsection*{Implementazione Naive}
+\subsubsection*{Naive}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    Come detto è una versione semplice, è composta da soli tre cicli che permettono di scorrere le matrici e costruire il risultato.
+    Questa implementazione è composta da soli tre cicli che permettono di scorrere le matrici e costruire il risultato.
     \begin{adjustbox}{margin=0cm 0cm 0cm 0.5cm, center} % left, bottom, right, top
         \includegraphics[width=0.95\textwidth]{resources/naive_icon.png}
     \end{adjustbox}    
 \end{frame}
 
-\subsubsection*{Implementazione Column blocked}
+\subsubsection*{Column blocked}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    Qui viene tenuto conto del fatto che quando si accede un elemento della matrice esso viene caricato in cache insieme ai 15 elementi successivi, è possibile quindi riorganizzare il processamento per sfruttare fenomeno.
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.7cm, center} % left, bottom, right, top
+        \includegraphics[width=1\textwidth]{resources/blocked_icon2.png}
+    \end{adjustbox}
 \end{frame}
 
 %---------------------CUDA------------------------------
