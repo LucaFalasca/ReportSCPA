@@ -65,14 +65,14 @@
 
 \subsection{Metriche di valutazione}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    Per valutare le prestazioni delle soluzioni sviluppate sono stati considerati i FLOPS definiti come:
+    Per valutare le prestazioni delle soluzioni sviluppate la metrica utilizzata sono i FLOPS, i quali sono definiti come:
     \begin{Definition}
         \begin{equation}
             FLOPS = \frac{2MNK}{exec\_time}
         \end{equation}
     \end{Definition}
     \begin{adjustbox}{margin=0cm 0cm 0cm 0.2cm, center} % left, bottom, right, top
-        \includegraphics[width=0.3\textwidth]{resources/performance_icon.png}
+        \includegraphics[width=0.25\textwidth]{resources/performance_icon.png}
     \end{adjustbox}
 \end{frame}
 
@@ -103,7 +103,24 @@
 \section{MPI}
 
 \begin{frame}{\secname}
-    %TODO
+    In questa sezione verranno presentate la versione dell'implementazione del prodotto tra matrici utilizzando le funzionalità offerte da MPI per la parallelizzazione su CPU, in particolare verranno affrontati tre aspetti:
+    \vspace{0.5cm}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}[b]{1\textwidth}
+                \begin{itemize}
+                    \item Distribuzione del carico
+                    \item Riduzione del risultato
+                    \item Implementazione del prodotto
+                \end{itemize}
+            \end{minipage}
+            \column{0.5\textwidth}
+                \begin{minipage}{1\textwidth}
+                    \begin{adjustbox}{margin=0cm 0cm 0cm 0.3cm, center} % left, bottom, right, top
+                        \includegraphics[width=0.5\textwidth]{resources/parallel_icon.png}
+                    \end{adjustbox}
+                \end{minipage}
+    \end{columns}
 \end{frame}
 
 \subsection{Distribuzione del carico}
