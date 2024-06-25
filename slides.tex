@@ -139,19 +139,119 @@
 
 \subsection{1 versione}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.2\textwidth]{resources/cuda_scheme_v1.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}[b]{1\textwidth}
+                \begin{enumerate}
+                    \item Divisione della riga di A tra i thread
+                    \item Divisione della colonna di B tra i thread
+                    \item Calcolo del prodotto per ogni thread
+                    \item Memorizzazione dei risultati parziali in shared memory
+                    \item Reduce dei risultati parziali
+                    \item Scrittura sulla matrice C
+                    \item Ripeti per ogni colonna di B
+                    \item Ripeti per ogni riga di A
+                \end{enumerate}
+            \end{minipage}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    Nella versione 1 tra il calcolo di una colonna e l'altra, i thread devono sincronizzarsi per poi fare l'operazione di reduce dei risultati parziali. \\ \\
+    Questo perchè il vettore in shared memory riesce a contenere solo i risultati della riga di A per 1 colonna di B. \\
+    
+    \textbf{Soluzione:} \\
+    Utilizzare una matrice di shared memory che mantiene i risultati parziali di più colonne per volta.
+   \[
+        aux = \left[
+        \begin{matrix}
+        pr_{col_0, t_0} & pr_{col_0, t_2} & ... & pr_{col_0, t_{BD}} \\
+        pr_{col_1, t_0} & pr_{col_1, t_2} & ... & pr_{col_1, t_{BD}} \\
+        ... & ... & ... & ... \\
+        pr_{col_{Q}, t_0} & pr_{col_{Q}, t_2} & ... & pr_{col_{Q}, t_{BD}}
+        \end{matrix}\right]
+    \]
 \end{frame}
 
 \subsection{2 versione}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{minipage}[b]{1\textwidth}
+            \begin{enumerate}
+                \item Divisione della riga di A tra i thread
+                \item Divisione delle colonna di B \\tra i thread
+                \item Calcolo del prodotto per ogni thread per tutto il gruppo di colonne
+                \item Memorizzazione dei risultati parziali in shared memory
+                \item Reduce dei risultati parziali 
+                \item Scrittura sulla matrice C
+                \item Ripeti per ogni gruppo di colonne di B
+                \item Ripeti per ogni riga di A
+            \end{enumerate}
+        \end{minipage}
+        \column{0.5\textwidth}
+        \begin{minipage}{1.25\textwidth}
+            \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                \includegraphics[width=1.2\textwidth]{resources/cuda_scheme_v2.png}
+            \end{adjustbox}
+        \end{minipage}
+        
+    \end{columns}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    Nella versione 2 quando si processa il gruppo di colonne, poiché si calcola il risultato parziale di una colonna per volta, per ognuna di esse bisogna riaccedere alla riga della matrice A che è in memoria globale. \\ \\
+    
+    \textbf{Soluzioni:} \\
+    \begin{itemize}
+        \item Anziché processare una colonna per volta si processano i primi $BD$ elementi delle Q colonne del gruppo corrente.
+        \begin{itemize}
+            \item Questo permette di accedere una sola volta alla riga di A.
+        \end{itemize}
+        \item Mantenere in shared memory parte della colonna A necessario per il calcolo.
+        \begin{itemize}
+            \item Questo permette di accedere alla memoria globale una sola volta.
+            \item Ogni thread accede al proprio elemento della riga di A necessario per il calcolo dalla memoria shared.
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \subsection{3 versione}
-\begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
-\end{frame}
 
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    \begin{columns}
+        \column{0.5\textwidth}
+        \begin{minipage}[b]{1\textwidth}
+            \begin{enumerate}
+                \item Divisione della riga di A tra i thread
+                \item Divisione delle colonna di B \\ tra i thread
+                \item Memorizzazione della riga parziale di A in shared memory
+                \item Calcolo del prodotto per ogni thread per il blocco di righe \\ del gruppo di colonne 
+                \begin{itemize}
+                    \item ripeti per ogni blocco di \\ righe del gruppo di colonne
+                \end{itemize}
+                \item Memorizzazione dei risultati parziali in shared memory
+                \item Reduce dei risultati parziali 
+                \item Scrittura sulla matrice C
+                \item Ripeti per ogni gruppo di colonne di B
+                \item Ripeti per ogni riga di A
+            \end{enumerate}
+        \end{minipage}
+        \column{0.5\textwidth}
+        \begin{minipage}{1.25\textwidth}
+            \begin{adjustbox}{margin=0cm 1cm 0cm 0cm, center} % left, bottom, right, top
+                \includegraphics[width=1.1\textwidth]{resources/cuda_scheme_v3.png}
+            \end{adjustbox}
+        \end{minipage}
+        
+    \end{columns}
+\end{frame}
 \subsection{Configurazione dei parametri}
 \subsubsection*{Thread}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
