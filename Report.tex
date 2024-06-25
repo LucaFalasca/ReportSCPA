@@ -238,7 +238,7 @@ Andiamo ad analizzare il problema dei bank conflict nel nostro contesto. Verrà 
 Nella versione 3 del codice per GPU ci sono 2 possibili utilizzi della shared memory: 
 \begin{itemize}
     \item Memorizzare la riga della matrice A 
-    \item Memorizzare un dato numero di colonne della matrice B
+    \item Memorizzare il vettore dei risultati parziali
 \end{itemize}
 Per quanto riguarda il primo caso, la quantità di shared memory utilizzata è pari al numero di thread in un blocco, il quale è multilpo di 32. Il che significa che ogni warp di thread utilizza 32 banchi per volta e accedendo in questo modo in maniera simultanea alla memoria. Nell'utilizzo che se ne fa nell'algoritmo ogni thread accede ad una bank diverso, quindi non ci possono essere conflitti perché il pattern di accesso è lineare con stride di una word da 32 bit, dato che vengono utilizzati i float che occupano 4 byte.\\
 Per quanto riguarda il secondo caso, la shared memory viene utilizzata per mantenere i risultati parziali. Ma anche in questo caso il pattern di accesso è identico al primo caso, perché ad ogni thread è associato un vettore di risultati parziali ed ognuno accede ad un banco diverso dato che il vettore bidimensionale in shared memory segue un row-major order. il vettore ausiliario è fatto nel seguente modo:
