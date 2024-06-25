@@ -14,6 +14,7 @@
 \usepackage{hyperref}
 \usepackage{adjustbox}
 \usepackage{svg}
+\usepackage{soul}
 \svgsetup{inkscapelatex=false}
 
 \begin{document}
@@ -255,17 +256,69 @@
 \subsection{Configurazione dei parametri}
 \subsubsection*{Thread}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{itemize}
+        \item Griglia unidimensionale di dimensione pari al numero di righe della matrice A
+        \begin{itemize}
+            \item Dovuto al fatto che ogni blocco è responsabile di una singola riga della matrice A
+        \end{itemize}
+        \item Numero di thread per ogni blocco (block size) pari a 256.
+        \begin{itemize}
+            \item Difficile stabilire un valore ottimale
+            \item Si è rivelato il più efficiente in termini di prestazioni
+            \item Multiplo di 32, dimensione del warp
+        \end{itemize}
+    \end{itemize}
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \begin{adjustbox}{margin=6cm 0.3cm 0cm 0.3cm, center} % left, bottom, right, top
+            \includegraphics[width=1.1\textwidth, frame]{resources/grid1d.png}
+        \end{adjustbox}
+    \end{minipage}
 \end{frame}
 
 \subsubsection*{Shared memory}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{itemize}
+        \item 1 versione:
+        \begin{itemize}
+            \item \(size = BD \cdot 4\)
+        \end{itemize}
+        \item 2 versione:
+        \begin{itemize}
+            \item \(size = BD \cdot NC \cdot 4\)
+        \end{itemize}
+        \item 3 versione:
+        \begin{itemize}
+            \item \(size = (BD \cdot NC + BD) \cdot 4 = 4 (BD \cdot (NC + 1))\)
+        \end{itemize}
+    \end{itemize}
+    \vspace{0.5cm}
+    Avrebbe senso scegliere un valore di \(NC\) tale da massimizzare la shared memory disponibile, tuttavia tale approccio non porta a prestazioni migliori. \\ \\
+    Quindi è stato utilizzato un approccio empirico per la scelta di \(NC\), scegliendo il valore con prestazioni maggiori, ovvero \(NC = 32\).
 \end{frame}
 
 \subsubsection*{Bank conflit}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    Verrà analizzata solo la versione 3 perché tutti gli altri casi sono sottoinsiemi di questo.\\ \\
+    2 possibili utilizzi della shared memory: 
+    \begin{itemize}
+        \item Memorizzare la riga della matrice A 
+        \begin{itemize}
+            \item Si memorizza un pezzo per volta di matrice A pari al numero di thread
+            \item Ogni warp accede a 32 elementi contigui per volta
+            \begin{itemize}
+                \item \hl{pattern di accesso lineare con stride di una word da 32 bit}
+            \end{itemize}
+        \end{itemize}
+        \item Memorizzare il vettore dei risultati parziali
+        \begin {itemize}
+            \item Matrice aux row-order major
+            \item Ogni warp accede a 32 elementi contigui per volta
+            \begin{itemize}
+                \item \hl{pattern di accesso lineare con stride di una word da 32 bit}
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 %---------------------MPI+CUDA------------------------------
