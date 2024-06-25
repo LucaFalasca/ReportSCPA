@@ -27,12 +27,39 @@
 
 \subsection{Descrizione del problema}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Il progetto verte sull'implementazione di un nucleo di calcolo per effettuare il prodotto tra due matrici dense, definito come:
+    \begin{Definition}
+        \begin{equation}
+            \label{eq:ce_ue}
+            C = C + A\cdot B
+        \end{equation}
+    \end{Definition}
+    dove $A$, $B$ e $C$ sono matrici di dimensioni $M\times K$, $K\times N$ ed $M\times N$ rispettivamente, in particolare verranno considerate:
+    \begin{itemize}
+        \item Matrici quadrate
+        \item Matrici rettangolari con $M,N>>K$ con $K=\{32, 64, 128, 156\}$
+    \end{itemize}
 \end{frame}
 
 \subsection{Obiettivi}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Verranno analizzate le prestazioni di tre differenti implementazioni del prodotto, in particolare:
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}[b]{1\textwidth}
+                \begin{itemize}
+                    \item MPI, utilizzando il paradigma SIMD per la parallelizzazione su CPU
+                    \item CUDA, sfruttando le potenzialità delle GPU per l'accelerazione computazionale
+                    \item MPI+CUDA, cercando di combinare i vantaggi delle due precedenti versioni
+                \end{itemize}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.2cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.5\textwidth]{resources/cpu_gpu.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
 
 \subsection{Metriche di valutazione}
