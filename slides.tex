@@ -393,25 +393,168 @@ Le matrici A, B e C vengono distribuite come segue:
 \section{MPI+CUDA}
 
 \begin{frame}{\secname}
-    %TODO
+    Con questa soluzione si è cercato di sfruttare i vantaggi di MPI e CUDA e mitigarne gli svantaggi, in particolare:
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{itemize}
+                \item La taglia del problema non è più limitata dalla singola macchina
+                \item Si sfruttano le GPU dell'intero cluster
+            \end{itemize}
+        \column{0.5\textwidth}
+        \begin{minipage}[b]{1\textwidth}
+            \begin{adjustbox}{margin=0cm 0.3cm 0cm 0cm, center} % left, bottom, right, top
+                \includegraphics[width=0.7\textwidth]{resources/mpi_cuda_adjusted.png}
+            \end{adjustbox}
+        \end{minipage}
+    \end{columns}
+    Con questa soluzione si distribuisce (idealmente) il problema all'intero cluster tramite la block cyclic distribution implementata in MPI ed ogni server effettua il prodotto tra le sottmatrici assegnate utilizzando il nucleo di calcolo implementato in CUDA sulle proprie GPU.
 \end{frame}
 
 %---------------------Analisi delle prestazioni------------------------------
 \section{Analisi delle prestazioni}
 
 \subsection{MPI}
-\begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+\subsubsection*{Matrici quadrate}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (1)}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0.5cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth, frame]{resources/quadrate_naive.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0.5cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth, frame]{resources/quadrate_blocked.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+    Come è possibile vedere ci sono dei drastici cali di performance, questi avvengono quando le dimensioni delle matrici sono potenze di 2, questo è causato da problemi di cache dovuti al fatto che la taglia delle matrici è multiplo \textit{critical stride}.
 \end{frame}
 
-\subsubsection*{Matrici quadrate}
-\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (2)}
+    Di seguito per apprezzare meglio l'andamento delle performance vengono riportati grafici in cui non è presente il problema del critical stride.
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.5cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth, frame]{resources/square_naive_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.5cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth, frame]{resources/square_blocked_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
 
 \subsubsection*{Matrici rettangolari}
-\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (1)}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k32_naive.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k128_naive.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k64_naive.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k156_naive.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (2)}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k32_blocked.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k128_blocked.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k64_blocked.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rettangolari_k156_blocked.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (3)}
+    Di seguito vengono riportati grafici non affetti dal critical stride.
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.75\textwidth, frame]{resources/rect_k32_naive_nocrit.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.75\textwidth, frame]{resources/rect_k128_naive_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.75\textwidth, frame]{resources/rect_k64_naive_nocrit.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.75\textwidth, frame]{resources/rect_k156_naive_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (4)}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rect_k32_blocked_nocrit.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rect_k128_blocked_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rect_k64_blocked_nocrit.png}
+                \end{adjustbox}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.1cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.8\textwidth, frame]{resources/rect_k156_blocked_nocrit.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
 
 \subsection{CUDA}
