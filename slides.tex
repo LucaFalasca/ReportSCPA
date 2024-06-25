@@ -164,16 +164,22 @@ Le matrici A, B e C vengono distribuite come segue:
 \subsection{Implementazione del prodotto}
 \begin{frame}{\secname \text{ }- \subsecname\ }
     L'effettiva implementazione del prodotto è stata realizzata in due versioni:
+    \vspace{0.3cm}
     \begin{itemize}
         \item \textit{Naive}, implementazione semplice che non tiene conto di ottimizzazioni
-        \item \textit{Column blocked}, implementazione più complessa che sfruttare la cache in modo migliore
+        \item \textit{Column blocked}, implementazione più complessa che ottimizza l'utilizzo della cache
     \end{itemize}
-    
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.7cm, center} % left, bottom, right, top
+        \includegraphics[width=0.7\textwidth]{resources/product_icon.png}
+    \end{adjustbox}
 \end{frame}
 
 \subsubsection*{Implementazione Naive}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    Come detto è una versione semplice, è composta da soli tre cicli che permettono di scorrere le matrici e costruire il risultato.
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.5cm, center} % left, bottom, right, top
+        \includegraphics[width=0.95\textwidth]{resources/naive_icon.png}
+    \end{adjustbox}    
 \end{frame}
 
 \subsubsection*{Implementazione Column blocked}
