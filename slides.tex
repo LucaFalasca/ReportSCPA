@@ -64,12 +64,38 @@
 
 \subsection{Metriche di valutazione}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Per valutare le prestazioni delle soluzioni sviluppate sono stati considerati i FLOPS definiti come:
+    \begin{Definition}
+        \begin{equation}
+            FLOPS = \frac{2MNK}{exec\_time}
+        \end{equation}
+    \end{Definition}
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.2cm, center} % left, bottom, right, top
+        \includegraphics[width=0.3\textwidth]{resources/performance_icon.png}
+    \end{adjustbox}
 \end{frame}
 
 \subsection{Raccolta dei dati}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    I dati raccolti sono stati ottenuti eseguendo i vari nuclei di calcolo sul server di dipartimento il quale presenta le seguenti specifiche:
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}[b]{1\textwidth}
+                \begin{itemize}
+                    \item CPU: 2 x Intel Xeon Silver 4210
+                    \item Memory: 64.0 GiB of RAM
+                    \item GPU: Nvidia Quadro RTX 5000
+                    \item CUDA version: 12.3
+                    \item MPI version: 4.1
+                \end{itemize}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0.6cm, center} % left, bottom, right, top
+                    \includegraphics[width=0.65\textwidth]{resources/pc.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
 
 %---------------------MPI------------------------------
