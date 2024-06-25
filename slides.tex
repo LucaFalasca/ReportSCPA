@@ -1,0 +1,188 @@
+\documentclass[compress]{beamer}
+\usepackage[
+    title={Parallel Matrix Multiplication},
+    event={Progetto fine corso Sistemi di Calcolo Parallelo e Applicazioni},
+    author={MC, LF},
+    longauthor={Matteo Conti, Luca Falasca},
+    email={},
+    institute={SCPA 2023-2024},
+    longinstitute={Universita' degli Studi di Roma Tor Vergata},
+]{unislides}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{minted}
+\usepackage{algorithm}
+\usepackage{hyperref}
+\usepackage{adjustbox}
+\usepackage{svg}
+\svgsetup{inkscapelatex=false}
+
+\begin{document}
+
+\begin{frame}[plain]
+    \titlepage
+\end{frame}
+
+%---------------------INTRODUZIONE---------------------
+\section{Introduzione}
+
+\subsection{Descrizione del problema}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Obiettivi}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Metriche di valutazione}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Raccolta dei dati}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+%---------------------MPI------------------------------
+\section{MPI}
+
+\begin{frame}{\secname}
+    %TODO
+\end{frame}
+
+\subsection{Distribuzione del carico}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Riduzione del risultato}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Implementazione del prodotto}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsubsection*{Implementazione Naive}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{Implementazione Column blocked}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+%---------------------CUDA------------------------------
+\section{CUDA}
+
+\begin{frame}{\secname}
+    %TODO
+\end{frame}
+
+\subsection{1 versione}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{2 versione}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{3 versione}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsection{Configurazione dei parametri}
+\subsubsection*{Thread}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{Shared memory}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{Bank conflit}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+%---------------------MPI+CUDA------------------------------
+\section{MPI+CUDA}
+
+\begin{frame}{\secname}
+    %TODO
+\end{frame}
+
+%---------------------Analisi delle prestazioni------------------------------
+\section{Analisi delle prestazioni}
+
+\subsection{MPI}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsubsection*{Matrici quadrate}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{Matrici rettangolari}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsection{CUDA}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsubsection*{Matrici quadrate}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{Matrici rettangolari}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsection{MPI+CUDA}
+\begin{frame}{\secname \text{ }- \subsecname\ }
+    %TODO
+\end{frame}
+
+\subsubsection*{Matrici quadrate}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+\subsubsection*{MPI+CUDA}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    %TODO
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Grazie per l'attenzione!}
+    \begin{itemize}
+        \item Tutto il codice che implementa il progetto è disponibile al
+        seguente repository: \href{https://github.com/LucaFalasca/ParallelMatrixMultiplication}{https://github.com/LucaFalasca/ParallelMatrixMultiplication}
+        \item contattaci a:
+            \begin{itemize}
+                \item \href{mailto:matteo.conti@students.uniroma2.eu}{matteo.conti@students.uniroma2.eu}
+                \item \href{mailto:luca.falasca@students.uniroma2.eu}{luca.falasca@students.uniroma2.eu}
+            \end{itemize}
+       \end{itemize}
+\end{frame}
+
+
+\end{document}
