@@ -152,7 +152,16 @@
 \section{CUDA}
 
 \begin{frame}{\secname}
-    %TODO
+    In questa sezione si parlerà dell'implementazione in cuda del prodotto matrice matrice. \\ 
+    
+    Verranno presentate 3 versioni del codice che mostrano degli upgrade basandosi su uno sfruttamento migliore delle risorse a disposizione. \\
+
+    Verranno inoltre affrontati gli aspetti di:
+    \begin{itemize}
+        \item Gestione del numero di thread
+        \item Gestione della shared memory
+        \item Gestione dei conflitti tra bank e accessi coalizzati
+    \end{itemize}
 \end{frame}
 
 \subsection{1 versione}
@@ -364,34 +373,162 @@
 \end{frame}
 
 \subsection{CUDA}
-\begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
-\end{frame}
-
 \subsubsection*{Matrici quadrate}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{minipage}{0.85\textwidth}
+        \centering
+        \begin{adjustbox}{margin=2cm 0cm 0cm 0cm, center} % left, bottom, right, top
+            \includegraphics[width=1.1\textwidth, frame]{resources/gpu_matrix_square.png}
+        \end{adjustbox}
+    \end{minipage}
+    
 \end{frame}
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    \begin{itemize}
+        \item V3 prestazioni migliori
+        \begin{itemize}
+            \item dovuto al fatto che essa sfrutta al meglio la shared memory e riduce il numero di accessi alla memoria globale
+        \end{itemize}
+        \item V2 prestazioni peggiori di V1
+        \begin{itemize}
+            \item Complessità aggiuntiva dovuta alla necessità di gestire un numero di colonne diverso da 1
+            \item Potrebbe aver portato a ridurre i benefici introdotti e quindi ad ottenere delle prestazioni minori
+        \end{itemize}
+    \end{itemize}
+    
+\end{frame}
+
+
 
 \subsubsection*{Matrici rettangolari}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.8\textwidth}
+                \centering
+                \begin{adjustbox}{margin=1cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/gpu_matrix_rect_perfv1.png}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.8\textwidth}
+                \centering
+                \begin{adjustbox}{margin=1.5cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/gpu_matrix_rect_perfv2.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \begin{adjustbox}{margin=7cm 0cm 0cm 0.2cm, center} % left, bottom, right, top
+            \includegraphics[width=1.1\textwidth, frame]{resources/gpu_matrix_rect_perfv3.png}
+        \end{adjustbox}
+    \end{minipage}
+\end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    \begin{itemize}
+    \item Si può notare un calo considerevole delle prestazioni rispetto alla versione quadrata.
+        \begin{itemize}
+            \item ogni blocco lavora su una singola riga della colonna A alla volta, dividendola per il numero di thread in quel blocco
+            \item ogni riga della matrice A è grande k, il quale è minore del numero di thread
+            \item molti thread per ogni blocco che non fanno nulla, impatto dell'overhead di averli creati
+            \item prestazioni peggiorano sempre più al diminuire del valore di k proprio perché il numero di thread inutili aumenta
+        \end{itemize}
+
+    \item Al contrario del caso quadrato non c'è un punto in cui c'è un calo delle prestazioni dovuto al trasferimento di memoria
+        \begin{itemize}
+            \item Matrici rettangolari sono più piccole $\Rightarrow$ tempo di trasferimento è minore 
+            \item non si arriva al punto di annullare la controparte di calcolo
+        \end{itemize}
+    \end{itemize} 
 \end{frame}
 
 \subsection{MPI+CUDA}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Limiti intrinsechi:
+    \begin{itemize}
+        \item Nel server dove sono stati fatti gli esperimenti è presente una sola GPU
+        \begin{itemize}
+            \item limitazione notevole dato che il vantaggio di utilizzare la soluzione MPI+CUDA è proprio quello di poter utilizzare le GPU di più server
+            \item quando i processi andranno a tentare di eseguire concorrentemente il nucleo di calcolo su CPU, essi verranno serializzati
+            \item Sfruttamento limitato del potenziale della soluzione
+        \end{itemize}
+        \item Le prestazioni calcolate contengono anche il conteggio del trasferimento della memoria RAM alla memoria globale della GPU
+        \begin{itemize}
+            \item non confrontabili direttamente con le prestazioni ottenute con la soluzione solo CUDA
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \subsubsection*{Matrici quadrate}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{itemize}
+                \item - Processi $\Rightarrow$ + Performance
+                \item Overhead memoria con \\matrici grandi
+            \end{itemize}
+        \column{0.6\textwidth}
+            \begin{minipage}{0.85\textwidth}
+                \centering
+                \begin{adjustbox}{margin=0cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/mpi_cuda_square.png}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
 
-\subsubsection*{MPI+CUDA}
+\subsubsection*{Matrici rettangolari}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.75\textwidth}
+                \centering
+                \begin{adjustbox}{margin=2cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/mpi_cuda_32.jpg}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.75\textwidth}
+                \centering
+                \begin{adjustbox}{margin=1cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/mpi_cuda_64.jpg}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+    \begin{columns}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.75\textwidth}
+                \centering
+                \begin{adjustbox}{margin=2cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/mpi_cuda_128.jpg}
+                \end{adjustbox}
+            \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{0.75\textwidth}
+                \centering
+                \begin{adjustbox}{margin=1cm 0cm 0cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1.1\textwidth, frame]{resources/mpi_cuda_156.jpg}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
 \end{frame}
+
+\begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
+    \begin{itemize}
+        \item Trend leggermente diverso nel quale al diminuire di k le prestazioni migliorano al contrario di quello che succedeva con il solo codice CUDA
+        \begin{itemize}
+            \item trasferimento di memoria nel calcolo esso sia un fattore determinante che aiuta matrici più piccole a ottenere prestazioni migliori
+        \end{itemize}
+        \item Al contrario del caso quadrato non c'è un punto in cui c'è un calo delle prestazioni dovuto al trasferimento di memoria
+        \begin{itemize}
+            \item Probabilmente dovuto al fatto che le matrici rettangolari sono più piccole e quindi il tempo di trasferimento è minore e non si arriva al punto di annullare la controparte di calcolo.
+        \end{itemize} 
+    \end{itemize}
+\end{frame}
+
+
 
 
 \begin{frame}
