@@ -206,8 +206,8 @@ Le matrici A, B e C vengono distribuite come segue:
     \end{itemize}
 \end{frame}
 
-\subsection{1 versione}
-\begin{frame}{\secname \text{ }- \subsecname\ }
+\subsection{Versione 1}
+\begin{frame}{\secname \text{ }- \subsecname\ (1)}
     \begin{columns}
         \column{0.5\textwidth}
             \begin{minipage}{1\textwidth}
@@ -231,7 +231,7 @@ Le matrici A, B e C vengono distribuite come segue:
     \end{columns}
 \end{frame}
 
-\begin{frame}{\secname \text{ }- \subsecname\ }
+\begin{frame}{\secname \text{ }- \subsecname\ (2)}
     Nella versione 1 tra il calcolo di una colonna e l'altra, i thread devono sincronizzarsi per poi fare l'operazione di reduce dei risultati parziali. \\ \\
     Questo perchè il vettore in shared memory riesce a contenere solo i risultati della riga di A per 1 colonna di B. \\
     
@@ -248,8 +248,8 @@ Le matrici A, B e C vengono distribuite come segue:
     \]
 \end{frame}
 
-\subsection{2 versione}
-\begin{frame}{\secname \text{ }- \subsecname\ }
+\subsection{Versione 2}
+\begin{frame}{\secname \text{ }- \subsecname\ (1)}
     \begin{columns}
         \column{0.5\textwidth}
         \begin{minipage}[b]{1\textwidth}
@@ -274,7 +274,7 @@ Le matrici A, B e C vengono distribuite come segue:
     \end{columns}
 \end{frame}
 
-\begin{frame}{\secname \text{ }- \subsecname\ }
+\begin{frame}{\secname \text{ }- \subsecname\ (2)}
     Nella versione 2 quando si processa il gruppo di colonne, poiché si calcola il risultato parziale di una colonna per volta, per ognuna di esse bisogna riaccedere alla riga della matrice A che è in memoria globale. \\ \\
     
     \textbf{Soluzioni:} \\
@@ -291,7 +291,7 @@ Le matrici A, B e C vengono distribuite come segue:
     \end{itemize}
 \end{frame}
 
-\subsection{3 versione}
+\subsection{Versione 3}
 
 \begin{frame}{\secname \text{ }- \subsecname\ }
     \begin{columns}
