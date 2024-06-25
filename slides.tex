@@ -123,18 +123,52 @@
 \end{frame}
 
 \subsection{Distribuzione del carico}
-\begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+\begin{frame}{\secname \text{ }- \subsecname\ (1)}
+    Per la distribuzione del carico è stato utilizzato un approccio analogo a quello utilizzato dalla libreria ScaLAPACK, cioè la block cyclic distribution, questa tecnica permette di distribuire la matrice di partenza in modo da bilanciare il carico tra i processi in modo abbastanza ragionevole. La tecnica si basa su tre idee:
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item I processi vengono visti come una griglia $P_r \times P_c$
+        \item La matrice viene divisa in blocchi di dimensione $B_r \times B_c$
+        \item La griglia dei processi viene fatta scorrere in modo tumbling sui blocchi assegnando tali blocchi ai processi
+    \end{itemize}
+\end{frame}
+\begin{frame}{\secname \text{ }- \subsecname\ (2)}
+Le matrici A, B e C vengono distribuite come segue:
+\begin{columns}
+    \column{0.5\textwidth}
+        \begin{minipage}[b]{1\textwidth}
+            \begin{adjustbox}{margin=0cm 0cm 0.5cm 0cm, center} % left, bottom, right, top
+                \includegraphics[width=0.95\textwidth]{resources/matrixA_2d_block_cyclic_distribution.jpg}
+            \end{adjustbox}
+        \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \begin{adjustbox}{margin=0cm 0cm 0.5cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth]{resources/matrixB_row_block_cyclic_distribution.jpg}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+    \begin{adjustbox}{margin=0cm 0cm 0.5cm 0.3cm, center} % left, bottom, right, top
+        \includegraphics[width=0.5\textwidth]{resources/matrixC_row_block_cyclic_distribution.jpg}
+    \end{adjustbox}
 \end{frame}
 
 \subsection{Riduzione del risultato}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Dato che ogni riga di processi nella process grid partecipa alle stesse K righe del risultato, si è scelto di non effettuare la riduzione su un solo processo bensì di definire per ogni riga un \textit{row leader}. \\\\I leader effettuano la riduzione dei risultati parziali di tutti i processi nella loro riga e successivamente scriveranno su file il risultato senza interferire tra loro, in quanto scriveranno in punti diversi.
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.3cm, center} % left, bottom, right, top
+        \includegraphics[width=0.5\textwidth]{resources/reduce.png}
+    \end{adjustbox}
 \end{frame}
 
 \subsection{Implementazione del prodotto}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    L'effettiva implementazione del prodotto è stata realizzata in due versioni:
+    \begin{itemize}
+        \item \textit{Naive}, implementazione semplice che non tiene conto di ottimizzazioni
+        \item \textit{Column blocked}, implementazione più complessa che sfruttare la cache in modo migliore
+    \end{itemize}
+    
 \end{frame}
 
 \subsubsection*{Implementazione Naive}
