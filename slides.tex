@@ -14,7 +14,6 @@
 \usepackage{hyperref}
 \usepackage{adjustbox}
 \usepackage{svg}
-\usepackage{soul}
 \svgsetup{inkscapelatex=false}
 
 \begin{document}
@@ -124,23 +123,63 @@
 \end{frame}
 
 \subsection{Distribuzione del carico}
-\begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+\begin{frame}{\secname \text{ }- \subsecname\ (1)}
+    Per la distribuzione del carico è stato utilizzato un approccio analogo a quello utilizzato dalla libreria ScaLAPACK, cioè la block cyclic distribution, questa tecnica permette di distribuire la matrice di partenza in modo da bilanciare il carico tra i processi in modo abbastanza ragionevole. La tecnica si basa su tre idee:
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item I processi vengono visti come una griglia $P_r \times P_c$
+        \item La matrice viene divisa in blocchi di dimensione $B_r \times B_c$
+        \item La griglia dei processi viene fatta scorrere in modo tumbling sui blocchi assegnando tali blocchi ai processi
+    \end{itemize}
+\end{frame}
+\begin{frame}{\secname \text{ }- \subsecname\ (2)}
+Le matrici A, B e C vengono distribuite come segue:
+\begin{columns}
+    \column{0.5\textwidth}
+        \begin{minipage}[b]{1\textwidth}
+            \begin{adjustbox}{margin=0cm 0cm 0.5cm 0cm, center} % left, bottom, right, top
+                \includegraphics[width=0.95\textwidth]{resources/matrixA_2d_block_cyclic_distribution.jpg}
+            \end{adjustbox}
+        \end{minipage}
+        \column{0.5\textwidth}
+            \begin{minipage}{1\textwidth}
+                \begin{adjustbox}{margin=0cm 0cm 0.5cm 0cm, center} % left, bottom, right, top
+                    \includegraphics[width=1\textwidth]{resources/matrixB_row_block_cyclic_distribution.jpg}
+                \end{adjustbox}
+            \end{minipage}
+    \end{columns}
+    \begin{adjustbox}{margin=0cm 0cm 0.5cm 0.3cm, center} % left, bottom, right, top
+        \includegraphics[width=0.5\textwidth]{resources/matrixC_row_block_cyclic_distribution.jpg}
+    \end{adjustbox}
 \end{frame}
 
 \subsection{Riduzione del risultato}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    Dato che ogni riga di processi nella process grid partecipa alle stesse K righe del risultato, si è scelto di non effettuare la riduzione su un solo processo bensì di definire per ogni riga un \textit{row leader}. \\\\I leader effettuano la riduzione dei risultati parziali di tutti i processi nella loro riga e successivamente scriveranno su file il risultato senza interferire tra loro, in quanto scriveranno in punti diversi.
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.3cm, center} % left, bottom, right, top
+        \includegraphics[width=0.5\textwidth]{resources/reduce.png}
+    \end{adjustbox}
 \end{frame}
 
 \subsection{Implementazione del prodotto}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    %TODO
+    L'effettiva implementazione del prodotto è stata realizzata in due versioni:
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item \textit{Naive}, implementazione semplice che non tiene conto di ottimizzazioni
+        \item \textit{Column blocked}, implementazione più complessa che ottimizza l'utilizzo della cache
+    \end{itemize}
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.7cm, center} % left, bottom, right, top
+        \includegraphics[width=0.7\textwidth]{resources/product_icon.png}
+    \end{adjustbox}
 \end{frame}
 
 \subsubsection*{Implementazione Naive}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    %TODO
+    Come detto è una versione semplice, è composta da soli tre cicli che permettono di scorrere le matrici e costruire il risultato.
+    \begin{adjustbox}{margin=0cm 0cm 0cm 0.5cm, center} % left, bottom, right, top
+        \includegraphics[width=0.95\textwidth]{resources/naive_icon.png}
+    \end{adjustbox}    
 \end{frame}
 
 \subsubsection*{Implementazione Column blocked}
@@ -282,69 +321,17 @@
 \subsection{Configurazione dei parametri}
 \subsubsection*{Thread}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    \begin{itemize}
-        \item Griglia unidimensionale di dimensione pari al numero di righe della matrice A
-        \begin{itemize}
-            \item Dovuto al fatto che ogni blocco è responsabile di una singola riga della matrice A
-        \end{itemize}
-        \item Numero di thread per ogni blocco (block size) pari a 256.
-        \begin{itemize}
-            \item Difficile stabilire un valore ottimale
-            \item Si è rivelato il più efficiente in termini di prestazioni
-            \item Multiplo di 32, dimensione del warp
-        \end{itemize}
-    \end{itemize}
-    \begin{minipage}{0.4\textwidth}
-        \centering
-        \begin{adjustbox}{margin=6cm 0.3cm 0cm 0.3cm, center} % left, bottom, right, top
-            \includegraphics[width=1.1\textwidth, frame]{resources/grid1d.png}
-        \end{adjustbox}
-    \end{minipage}
+    %TODO
 \end{frame}
 
 \subsubsection*{Shared memory}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    \begin{itemize}
-        \item 1 versione:
-        \begin{itemize}
-            \item \(size = BD \cdot 4\)
-        \end{itemize}
-        \item 2 versione:
-        \begin{itemize}
-            \item \(size = BD \cdot NC \cdot 4\)
-        \end{itemize}
-        \item 3 versione:
-        \begin{itemize}
-            \item \(size = (BD \cdot NC + BD) \cdot 4 = 4 (BD \cdot (NC + 1))\)
-        \end{itemize}
-    \end{itemize}
-    \vspace{0.5cm}
-    Avrebbe senso scegliere un valore di \(NC\) tale da massimizzare la shared memory disponibile, tuttavia tale approccio non porta a prestazioni migliori. \\ \\
-    Quindi è stato utilizzato un approccio empirico per la scelta di \(NC\), scegliendo il valore con prestazioni maggiori, ovvero \(NC = 28\).
+    %TODO
 \end{frame}
 
 \subsubsection*{Bank conflit}
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
-    Verrà analizzata solo la versione 3 perché tutti gli altri casi sono sottoinsiemi di questo.\\ \\
-    2 possibili utilizzi della shared memory: 
-    \begin{itemize}
-        \item Memorizzare la riga della matrice A 
-        \begin{itemize}
-            \item Si memorizza un pezzo per volta di matrice A pari al numero di thread
-            \item Ogni warp accede a 32 elementi contigui per volta
-            \begin{itemize}
-                \item \hl{pattern di accesso lineare con stride di una word da 32 bit}
-            \end{itemize}
-        \end{itemize}
-        \item Memorizzare il vettore dei risultati parziali
-        \begin {itemize}
-            \item Matrice aux row-order major
-            \item Ogni warp accede a 32 elementi contigui per volta
-            \begin{itemize}
-                \item \hl{pattern di accesso lineare con stride di una word da 32 bit}
-            \end{itemize}
-        \end{itemize}
-    \end{itemize}
+    %TODO
 \end{frame}
 
 %---------------------MPI+CUDA------------------------------
