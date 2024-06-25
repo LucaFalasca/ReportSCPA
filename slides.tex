@@ -432,7 +432,7 @@ Le matrici A, B e C vengono distribuite come segue:
                 \end{adjustbox}
             \end{minipage}
     \end{columns}
-    Come è possibile vedere ci sono dei drastici cali di performance, questi avvengono quando le dimensioni delle matrici sono potenze di 2, questo è causato da problemi di cache dovuti al fatto che la taglia delle matrici è multiplo \textit{critical stride}.
+    Come è possibile vedere ci sono dei drastici cali di performance, questi avvengono quando le dimensioni delle matrici sono potenze di 2, questo è causato da problemi di cache dovuti al fatto che la taglia delle matrici è multiplo del $critical\_stride=\frac{cache\_size}{associativity-ways}$.
 \end{frame}
 
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname\ (2)}
