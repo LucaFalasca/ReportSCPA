@@ -155,7 +155,7 @@ L'effettiva implementazione del prodotto tra matrici è stata fatta in due modi:
 \subsubsection{Implementazione Naive}
 In questa implementazione vengono semplicemente annidati tre cicli for senza tener conto di aspetti come l'accesso in memoria e l'utilizzo della cache.
 \subsubsection{Implementazione Column blocked}
-In questa implementazione viene tenuto conto dell'ottimizzazione dell'utilizzo della cache e degli accessi in memoria. Quando un elemento di una matrice viene caricato in cache quello che accade è che vengono caricati anche i successivi 15 elementi della stessa riga (utilizzando float con linee di cache da 64byte) è quindi possibile organizzare i cicli for in modo da sfruttare questa caratteristica processando consecutivamente gli elementi che sono stati caricati evitando di doverli ricaricare in futuro.
+In questa implementazione viene tenuto conto dell'ottimizzazione dell'utilizzo della cache e degli accessi in memoria. Quando un elemento di una matrice viene caricato dalla memoria quello che accade è che vengono caricati in cache sia lui che i successivi 15 elementi (utilizzando float con linee di cache da 64byte) è quindi possibile organizzare i cicli for in modo da sfruttare questa caratteristica processando consecutivamente gli elementi che sono stati caricati evitando di doverli ricaricare in futuro.
 La soluzione proposta prevede 5 cicli for annidati che si occupano di processare le matrici per blocchi, contribuendo a blocchi di colonne del risultato finale, in particolare:
 \begin{itemize}
     \item Il primo ciclo, il più esterno, si occupa di selezionare indici blocchi di colonne della matrice C (Fig. \ref{fig:column_blocked_1})
