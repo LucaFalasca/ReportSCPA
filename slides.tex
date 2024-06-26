@@ -620,18 +620,12 @@ Le matrici A, B e C vengono distribuite come segue:
             \item molti thread per ogni blocco che non fanno nulla, impatto dell'overhead di averli creati
             \item prestazioni peggiorano sempre più al diminuire del valore di k proprio perché il numero di thread inutili aumenta
         \end{itemize}
-
-    \item Al contrario del caso quadrato non c'è un punto in cui c'è un calo delle prestazioni dovuto al trasferimento di memoria
-        \begin{itemize}
-            \item Matrici rettangolari sono più piccole $\Rightarrow$ tempo di trasferimento è minore 
-            \item non si arriva al punto di annullare la controparte di calcolo
-        \end{itemize}
-    \end{itemize} 
+    \end{itemize}
 \end{frame}
 
 \subsection{MPI+CUDA}
 \begin{frame}{\secname \text{ }- \subsecname\ }
-    Limiti intrinsechi:
+    Limiti intrinseci:
     \begin{itemize}
         \item Nel server dove sono stati fatti gli esperimenti è presente una sola GPU
         \begin{itemize}
@@ -702,15 +696,16 @@ Le matrici A, B e C vengono distribuite come segue:
 
 \begin{frame}{\secname \text{ }- \subsecname\ \text{ }- \subsubsecname}
     \begin{itemize}
-        \item Trend leggermente diverso nel quale al diminuire di k le prestazioni migliorano al contrario di quello che succedeva con il solo codice CUDA
+        \item Trend in linea al codice CUDA
         \begin{itemize}
-            \item trasferimento di memoria nel calcolo esso sia un fattore determinante che aiuta matrici più piccole a ottenere prestazioni migliori
+            \item Al diminuire di k le prestazioni peggiorano
         \end{itemize}
         \item Al contrario del caso quadrato non c'è un punto in cui c'è un calo delle prestazioni dovuto al trasferimento di memoria
         \begin{itemize}
-            \item Probabilmente dovuto al fatto che le matrici rettangolari sono più piccole e quindi il tempo di trasferimento è minore e non si arriva al punto di annullare la controparte di calcolo.
-        \end{itemize} 
-    \end{itemize}
+            \item Matrici rettangolari sono più piccole $\Rightarrow$ tempo di trasferimento è minore 
+            \item non si arriva al punto di annullare la controparte di calcolo
+        \end{itemize}
+    \end{itemize} 
 \end{frame}
 
 
