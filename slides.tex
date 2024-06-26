@@ -630,7 +630,7 @@ Le matrici A, B e C vengono distribuite come segue:
         \item Nel server dove sono stati fatti gli esperimenti è presente una sola GPU
         \begin{itemize}
             \item limitazione notevole dato che il vantaggio di utilizzare la soluzione MPI+CUDA è proprio quello di poter utilizzare le GPU di più server
-            \item quando i processi andranno a tentare di eseguire concorrentemente il nucleo di calcolo su CPU, essi verranno serializzati
+            \item quando i processi andranno a tentare di eseguire concorrentemente il nucleo di calcolo su GPU, essi verranno serializzati
             \item Sfruttamento limitato del potenziale della soluzione
         \end{itemize}
         \item Le prestazioni calcolate contengono anche il conteggio del trasferimento della memoria RAM alla memoria globale della GPU
